@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+/* ============================================================
+   rutapp — Design Tokens (de rutapp_design_guide.html)
+   Tailwind v4: los tokens se declaran con @theme y generan
+   utilidades automáticamente (bg-brand, text-success, etc.)
+   ============================================================ */
+@theme {
+  /* Colores de marca y superficies */
+  --color-background: #0d0d0d;
+  --color-surface: #161616;
+  --color-card: #1a1a1a;
+  --color-brand: #f26522;
+  --color-brand-tint: #2a1a0a;
+
+  /* Escala de grises */
+  --color-gray-mid: #888888;
+  --color-gray-dark: #555555;
+  --color-stroke: #333333;
+
+  /* Colores semánticos */
+  --color-success: #4caf50;
+  --color-warning: #ffa726;
+  --color-error: #ef5350;
+
+  /* Tipografía */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* Border radius */
+  --radius-badge: 4px;
+  --radius-card: 8px;
+  --radius-btn: 10px;
+}
+
+/* ============================================================
+   Base global
+   ============================================================ */
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-background);
+    color: #ffffff;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Placeholder de inputs en gris oscuro según la guía */
+  ::placeholder {
+    color: var(--color-gray-dark);
+  }
+}
