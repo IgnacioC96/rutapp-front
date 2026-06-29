@@ -38,13 +38,15 @@
 @layer base {
   html {
     color-scheme: dark;
+    /* Color de texto principal (token). En oscuro = blanco. */
+    --color-fg: #ffffff;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
     background-color: var(--color-background);
-    color: #ffffff;
+    color: var(--color-fg);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -54,4 +56,41 @@
   ::placeholder {
     color: var(--color-gray-dark);
   }
+
+  /* ----------------------------------------------------------
+     MODO CLARO — solo se redefinen los tokens de superficie/gris
+     y el texto principal. La marca y los colores semánticos
+     (success/warning/error) se mantienen iguales en ambos temas.
+     ---------------------------------------------------------- */
+  html.light {
+    color-scheme: light;
+    --color-background: #f4f4f5;
+    --color-surface: #ffffff;
+    --color-card: #ffffff;
+    --color-brand-tint: #fff3ec;
+    --color-gray-mid: #6b7280;
+    --color-gray-dark: #9ca3af;
+    --color-stroke: #e4e4e7;
+    --color-fg: #18181b;
+  }
+}
+
+/* ============================================================
+   MODO CLARO — overrides de texto.
+   Van FUERA de @layer para ganarle a las utilidades de Tailwind
+   (.text-white). En claro, el "texto blanco" pasa a oscuro…
+   …salvo cuando va sobre fondo de marca (botones, nav activa),
+   donde el blanco se mantiene por contraste.
+   ============================================================ */
+html.light .text-white {
+  color: var(--color-fg);
+}
+html.light .hover\:text-white:hover {
+  color: var(--color-fg);
+}
+/* El blanco se conserva sobre superficies naranjas. */
+html.light .bg-brand.text-white,
+html.light .bg-brand .text-white,
+html.light .hover\:bg-brand:hover.text-white {
+  color: #ffffff;
 }
