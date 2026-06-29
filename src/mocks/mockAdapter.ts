@@ -11,6 +11,8 @@ import { mockUsers, type MockUser } from './mockUsers'
 import { delay, getBearer, makeResponse, parseBody, reject } from './mockHelpers'
 import { handleClientes, matchesClientes } from './mockClientes'
 import { handleEntregas, matchesEntregas } from './mockEntregas'
+import { handleUsuarios, matchesUsuarios } from './mockUsuarios'
+import { handleRutas, matchesRutas } from './mockRutas'
 
 /**
  * ============================================================
@@ -79,7 +81,11 @@ function handleAuth(config: InternalAxiosRequestConfig, url: string, method: str
   if (url.endsWith('/auth/login') && method === 'post') {
     const body = parseBody<LoginRequest>(config)
     const user = mockUsers.find(
-      (u) => u.email === body.email && u.password === body.password && u.rol === body.rol,
+      (u) =>
+        u.email === body.email &&
+        u.password === body.password &&
+        u.rol === body.rol &&
+        u.activo !== false,
     )
 
     if (!user) {
@@ -137,12 +143,20 @@ export const mockAdapter: AxiosAdapter = async (config) => {
   const authResult = handleAuth(config, url, method)
   if (authResult) return authResult
 
+  if (matchesUsuarios(url)) {
+    return handleUsuarios(config, url, method)
+  }
+
   if (matchesClientes(url)) {
     return handleClientes(config, url, method)
   }
 
   if (matchesEntregas(url)) {
     return handleEntregas(config, url, method)
+  }
+
+  if (matchesRutas(url)) {
+    return handleRutas(config, url, method)
   }
 
   // Cualquier otro endpoint aún no mockeado.
