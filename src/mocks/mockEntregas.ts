@@ -67,6 +67,11 @@ export function matchesEntregas(url: string): boolean {
   return url.includes('/entregas')
 }
 
+/** Acceso a una entrega mock (referencia mutable) para el mock de rutas. */
+export function findEntregaMock(id: string): Entrega | undefined {
+  return entregas.find((e) => e.id === id)
+}
+
 export async function handleEntregas(
   config: InternalAxiosRequestConfig,
   url: string,
