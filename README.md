@@ -81,8 +81,10 @@ creado**: podés loguearte directamente con los usuarios de prueba de arriba.
 | ----------------- | ------------------------------------------------------------- |
 | `mockAdapter.ts`  | Punto de entrada: enruta cada request al handler correcto.    |
 | `mockUsers.ts`    | Usuarios semilla + soporte de login/setup.                    |
+| `mockUsuarios.ts` | ABM de choferes/usuarios (listar, crear, desactivar).         |
 | `mockClientes.ts` | CRUD de clientes (3 clientes de ejemplo).                     |
 | `mockEntregas.ts` | CRUD de entregas + cancelar/completar (3 entregas de ejemplo). |
+| `mockRutas.ts`    | Crear ruta (con orden de paradas) y asignar chofer.           |
 | `mockHelpers.ts`  | Utilidades: latencia simulada, respuestas, parseo de body.    |
 
 > Los datos viven **en memoria**: si recargás la página, vuelven al estado semilla.
@@ -135,18 +137,20 @@ No hace falta tocar ningún componente: el resto del código ya habla con la API
 ```
 src/
   components/
-    layout/        AppShell (header + logout)
+    layout/        AppShell (sidebar de navegación responsive + toggle de tema)
     ui/            Button, Input, Select, Badge, Card, Modal, Spinner, EmptyState, Logo
   config/          env.ts (lee variables de entorno)
   features/
     auth/          login, setup (primer admin), hooks de auth
     clientes/      ABM de clientes (api, pages, components)
     entregas/      ABM de entregas (api, pages, components)
+    usuarios/      ABM de choferes (api, pages)
+    rutas/         planificación de rutas (api, estado, pages)
   lib/             apiClient (axios + JWT), cn, useDebounce
   mocks/           backend simulado (ver sección arriba)
   pages/           dashboards (admin / chofer)
   routes/          ProtectedRoute (guard por rol)
-  store/           authStore (Zustand)
+  store/           authStore + themeStore (Zustand)
   types/           api.ts (tipos del contrato)
 ```
 
@@ -161,3 +165,18 @@ src/
 - **Entregas (ABM)**: listado con filtros (estado, cliente, rango de fechas, búsqueda) y paginado,
   alta/edición (con dirección dependiente del cliente), detalle y acciones de
   **completar** / **cancelar**.
+
+## Funcionalidades (Sprint 2 / MVP 2)
+
+- **Choferes (ABM)** (`/admin/usuarios`): listado de choferes, alta (modal con validaciones)
+  y desactivación. Consume `GET/POST /auth/usuarios` y `PATCH /auth/usuarios/{id}/desactivar`.
+- **Rutas** (`/admin/rutas`): listado de rutas; creación seleccionando entregas **pendientes**
+  y un punto de origen (el backend devuelve las paradas en orden óptimo); detalle con las paradas
+  ordenadas y **asignación de chofer**. Consume `GET/POST /rutas` y `PATCH /rutas/{id}/asignar`.
+- **Navegación lateral (sidebar) responsive**: fija en escritorio y como **menú hamburguesa**
+  (drawer deslizante) en pantallas chicas. El punto de corte es `1024px`.
+- **Tema claro / oscuro**: toggle (sol / luna) en el sidebar. Recuerda la preferencia en
+  `localStorage` y respeta la del sistema operativo la primera vez.
+
+> Las acciones de chofer sobre la ruta (iniciar / finalizar) corresponden al dashboard del
+> chofer y se abordan en el siguiente sprint (MVP 3).
