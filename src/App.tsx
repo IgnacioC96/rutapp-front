@@ -12,6 +12,10 @@ import { EntregasListPage } from '@/features/entregas/pages/EntregasListPage'
 import { EntregaNuevaPage } from '@/features/entregas/pages/EntregaNuevaPage'
 import { EntregaDetallePage } from '@/features/entregas/pages/EntregaDetallePage'
 import { EntregaEditarPage } from '@/features/entregas/pages/EntregaEditarPage'
+import { UsuariosListPage } from '@/features/usuarios/pages/UsuariosListPage'
+import { RutasListPage } from '@/features/rutas/pages/RutasListPage'
+import { RutaNuevaPage } from '@/features/rutas/pages/RutaNuevaPage'
+import { RutaDetallePage } from '@/features/rutas/pages/RutaDetallePage'
 
 export default function App() {
   return (
@@ -31,6 +35,10 @@ export default function App() {
           <Route path="/admin/entregas/nueva" element={<EntregaNuevaPage />} />
           <Route path="/admin/entregas/:id" element={<EntregaDetallePage />} />
           <Route path="/admin/entregas/:id/editar" element={<EntregaEditarPage />} />
+          <Route path="/admin/usuarios" element={<UsuariosListPage />} />
+          <Route path="/admin/rutas" element={<RutasListPage />} />
+          <Route path="/admin/rutas/nueva" element={<RutaNuevaPage />} />
+          <Route path="/admin/rutas/:id" element={<RutaDetallePage />} />
         </Route>
 
         {/* Rutas de chofer */}
