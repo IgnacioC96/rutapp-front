@@ -9,7 +9,7 @@ export function DashboardAdmin() {
       <p className="mb-6 text-sm text-gray-mid">
         Gestión de clientes, entregas y rutas.
       </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Link to="/admin/clientes">
           <Card className="transition-colors hover:border-gray-dark">
             <p className="text-xs text-gray-mid">Clientes</p>
@@ -24,10 +24,20 @@ export function DashboardAdmin() {
             <p className="mt-1 text-xs text-brand">Gestionar →</p>
           </Card>
         </Link>
-        <Card>
-          <p className="text-xs text-gray-mid">Rutas activas</p>
-          <p className="mt-1 text-2xl font-bold text-white">—</p>
-        </Card>
+        <Link to="/admin/usuarios">
+          <Card className="transition-colors hover:border-gray-dark">
+            <p className="text-xs text-gray-mid">Choferes</p>
+            <p className="mt-1 text-2xl font-bold text-white">Ver</p>
+            <p className="mt-1 text-xs text-brand">Gestionar →</p>
+          </Card>
+        </Link>
+        <Link to="/admin/rutas">
+          <Card className="transition-colors hover:border-gray-dark">
+            <p className="text-xs text-gray-mid">Rutas</p>
+            <p className="mt-1 text-2xl font-bold text-white">Ver</p>
+            <p className="mt-1 text-xs text-brand">Planificar →</p>
+          </Card>
+        </Link>
       </div>
     </AppShell>
   )
