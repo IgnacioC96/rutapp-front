@@ -1,4 +1,4 @@
-/**
+**
  * Tipos del contrato de API (contrato_api_mvp2).
  * Se mantienen sincronizados con el backend FastAPI.
  */
@@ -148,6 +148,32 @@ export interface EntregasQuery {
   por_pagina?: number
 }
 
+/* ---------- Usuarios (ABM de choferes / admins) ---------- */
+export interface Usuario {
+  id: string
+  nombre: string
+  email: string
+  rol: Rol
+  telefono?: string
+  activo: boolean
+  /** El back NO lo devuelve hoy; queda opcional por si se agrega. */
+  creado_en?: string
+}
+
+/** Body para POST /auth/usuarios. */
+export interface UsuarioInput {
+  nombre: string
+  email: string
+  password: string
+  rol: Rol
+  telefono?: string
+}
+
+/** Query params de GET /auth/usuarios (devuelve un array plano). */
+export interface UsuariosQuery {
+  rol?: Rol
+}
+
 /* ---------- Rutas ---------- */
 export type EstadoRuta =
   | 'pendiente'
@@ -161,7 +187,8 @@ export interface Parada {
   entrega_id: string
   cliente: string
   direccion: string
-  tiempo_desde_anterior_min: number
+  tiempo_desde_anterior_min?: number
+  distancia_desde_anterior_km?: number
 }
 
 export interface Ruta {
@@ -170,5 +197,41 @@ export interface Ruta {
   estado: EstadoRuta
   total_km?: number
   tiempo_estimado_min?: number
+  es_plantilla: boolean
+  origen_descripcion?: string
+  chofer_id?: string | null
+  creada_en: string
+  iniciada_en?: string | null
+  finalizada_en?: string | null
   paradas: Parada[]
+}
+
+/** Body para POST /rutas. */
+export interface RutaInput {
+  nombre: string
+  entregas_ids: string[]
+  origen_descripcion?: string
+  origen_latitud?: number
+  origen_longitud?: number
+  guardar_plantilla?: boolean
+}
+
+/** Body para PATCH /rutas/{id}/asignar. */
+export interface RutaAsignarInput {
+  chofer_id: string
+}
+
+/** Respuesta de GET /rutas (listado paginado). */
+export interface RutasListResponse {
+  total: number
+  pagina: number
+  por_pagina: number
+  rutas: Ruta[]
+}
+
+/** Query params de GET /rutas. */
+export interface RutasQuery {
+  estado?: EstadoRuta
+  pagina?: number
+  por_pagina?: number
 }
