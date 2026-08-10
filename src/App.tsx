@@ -16,6 +16,9 @@ import { UsuariosListPage } from '@/features/usuarios/pages/UsuariosListPage'
 import { RutasListPage } from '@/features/rutas/pages/RutasListPage'
 import { RutaNuevaPage } from '@/features/rutas/pages/RutaNuevaPage'
 import { RutaDetallePage } from '@/features/rutas/pages/RutaDetallePage'
+import { GestionFlotaPage } from '@/pages/GestionFlotaPage'
+import { PlantillasRutaPage } from '@/pages/PlantillasRutaPage'
+import { SeguimientoPublicoPage } from '@/pages/SeguimientoPublicoPage'
 
 export default function App() {
   return (
@@ -39,7 +42,11 @@ export default function App() {
           <Route path="/admin/rutas" element={<RutasListPage />} />
           <Route path="/admin/rutas/nueva" element={<RutaNuevaPage />} />
           <Route path="/admin/rutas/:id" element={<RutaDetallePage />} />
+          <Route path="/admin/flota" element={<GestionFlotaPage />} />
+          <Route path="/admin/plantillas" element={<PlantillasRutaPage />} />
         </Route>
+
+        <Route path="/seguimiento/:codigo" element={<SeguimientoPublicoPage />} />
 
         {/* Rutas de chofer */}
         <Route element={<ProtectedRoute rol="chofer" />}>

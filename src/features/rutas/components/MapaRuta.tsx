@@ -1,0 +1,49 @@
+import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet'
+import type { LatLngExpression } from 'leaflet'
+import type { Parada } from '@/types/api'
+import 'leaflet/dist/leaflet.css'
+
+type Punto = Pick<Parada, 'orden' | 'cliente' | 'direccion' | 'latitud' | 'longitud'>
+
+const CABA: LatLngExpression = [-34.6037, -58.3816]
+
+/** Mapa OpenStreetMap reutilizable. Si aún no hay coordenadas, dibuja una previsualización alrededor del origen. */
+export function MapaRuta({
+  origen,
+  paradas,
+  className = '',
+}: {
+  origen?: { descripcion?: string; latitud?: number; longitud?: number }
+  paradas: Punto[]
+  className?: string
+}) {
+  const puntoOrigen: LatLngExpression = origen?.latitud != null && origen.longitud != null
+    ? [origen.latitud, origen.longitud] : CABA
+  const puntos = paradas.map((parada, indice) => {
+    // Preview útil durante la planificación hasta que el backend entregue coordenadas reales.
+    const fallback: LatLngExpression = [-34.6037 + (indice + 1) * 0.012, -58.3816 - (indice + 1) * 0.015]
+    return {
+      ...parada,
+      posicion: parada.latitud != null && parada.longitud != null
+        ? [parada.latitud, parada.longitud] as LatLngExpression : fallback,
+    }
+  })
+  const recorrido = [puntoOrigen, ...puntos.map((punto) => punto.posicion)]
+
+  return <div className={`overflow-hidden rounded-card border border-stroke ${className}`}>
+    <MapContainer center={puntoOrigen} zoom={12} scrollWheelZoom={false} className="h-64 w-full" aria-label="Mapa de la ruta">
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <CircleMarker center={puntoOrigen} radius={9} pathOptions={{ color: '#ffffff', fillColor: '#f26522', fillOpacity: 1, weight: 3 }}>
+        <Popup><strong>Origen</strong><br />{origen?.descripcion ?? 'Punto de origen'}</Popup><Tooltip permanent direction="top">Origen</Tooltip>
+      </CircleMarker>
+      <Polyline positions={recorrido} pathOptions={{ color: '#f26522', weight: 4, opacity: 0.85 }} />
+      {puntos.map((parada) => <CircleMarker key={`${parada.orden}-${parada.direccion}`} center={parada.posicion} radius={12} pathOptions={{ color: '#ffffff', fillColor: '#1a1a1a', fillOpacity: 1, weight: 2 }}>
+        <Tooltip permanent direction="center" className="!border-0 !bg-transparent !p-0 !font-bold !text-white !shadow-none">{parada.orden}</Tooltip>
+        <Popup><strong>{parada.cliente}</strong><br />{parada.direccion}</Popup>
+      </CircleMarker>)}
+    </MapContainer>
+  </div>
+}

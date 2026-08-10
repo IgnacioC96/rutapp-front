@@ -25,7 +25,7 @@ export function EntregaForm({
   const { data: clientesData, isLoading: loadingClientes } = useClientes({
     por_pagina: 100,
   })
-  const clientes = clientesData?.clientes ?? []
+  const clientes = useMemo(() => clientesData?.clientes ?? [], [clientesData?.clientes])
 
   const [clienteId, setClienteId] = useState(initial?.cliente_id ?? '')
   const [direccionId, setDireccionId] = useState(initial?.direccion_id ?? '')

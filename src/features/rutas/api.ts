@@ -6,6 +6,8 @@ import type {
   RutaInput,
   RutasListResponse,
   RutasQuery,
+  SeguimientoRuta,
+  UbicacionChofer,
 } from '@/types/api'
 
 const KEYS = {
@@ -34,6 +36,31 @@ async function createRuta(payload: RutaInput): Promise<Ruta> {
 
 async function asignarChofer(id: string, payload: RutaAsignarInput): Promise<Ruta> {
   const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/asignar`, payload)
+  return data
+}
+
+async function iniciarRuta(id: string): Promise<Ruta> {
+  const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/iniciar`)
+  return data
+}
+
+async function finalizarRuta(id: string): Promise<Ruta> {
+  const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/finalizar`)
+  return data
+}
+
+async function confirmarEntrega(id: string, entregaId: string, codigo: string): Promise<Ruta> {
+  const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/entregas/${entregaId}/confirmar`, { codigo })
+  return data
+}
+
+async function actualizarUbicacion(id: string, ubicacion: Pick<UbicacionChofer, 'latitud' | 'longitud'>): Promise<Ruta> {
+  const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/ubicacion`, ubicacion)
+  return data
+}
+
+async function getSeguimiento(codigo: string): Promise<SeguimientoRuta> {
+  const { data } = await apiClient.get<SeguimientoRuta>(`/seguimiento/${codigo}`)
   return data
 }
 
@@ -72,4 +99,40 @@ export function useAsignarChofer(id: string) {
     mutationFn: (payload: RutaAsignarInput) => asignarChofer(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
+}
+
+function useRutaAction(mutationFn: () => Promise<Ruta>) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: ['entregas'] })
+    },
+  })
+}
+
+export function useIniciarRuta(id: string) {
+  return useRutaAction(() => iniciarRuta(id))
+}
+
+export function useFinalizarRuta(id: string) {
+  return useRutaAction(() => finalizarRuta(id))
+}
+
+export function useConfirmarEntregaQr(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ entregaId, codigo }: { entregaId: string; codigo: string }) => confirmarEntrega(id, entregaId, codigo),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); qc.invalidateQueries({ queryKey: ['entregas'] }) },
+  })
+}
+
+export function useActualizarUbicacion(id: string) {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: (ubicacion: Pick<UbicacionChofer, 'latitud' | 'longitud'>) => actualizarUbicacion(id, ubicacion), onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }) })
+}
+
+export function useSeguimiento(codigo: string | undefined) {
+  return useQuery({ queryKey: ['seguimiento', codigo], queryFn: () => getSeguimiento(codigo!), enabled: Boolean(codigo), refetchInterval: 15_000 })
 }

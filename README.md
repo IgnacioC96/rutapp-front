@@ -158,6 +158,24 @@ src/
 
 ## Funcionalidades (Sprint 1)
 
+## Sprint 3 — MVP operativo
+
+Las vistas del Sprint 3 quedan disponibles en modo mock y usan los mismos endpoints que deberá
+implementar el backend real. Para una demostración completa: creá una ruta, asignala a un chofer,
+iniciá sesión como chofer y confirmá cada entrega con el código mostrado en el modal.
+
+| Prioridad | Historia / tarea | Estimación |
+| --- | --- | --- |
+| P0 | Dashboard de chofer, ruta asignada, paradas, inicio/finalización y estado vacío (US-23) | 8 SP · 14 h |
+| P0 | Confirmación de entrega por QR, con cámara compatible y alternativa manual (US-12) | 5 SP · 9 h |
+| P0 | Tracking público y actualización de geolocalización cada 15 s (US-14, US-15) | 8 SP · 16 h |
+| P1 | Gestión de flota desktop: disponibilidad de choferes y ruta activa (US-17) | 3 SP · 6 h |
+| P1 | Listado y guardado de plantillas de ruta (US-21) | 3 SP · 5 h |
+
+Estas tareas cubren el ciclo del MVP: planificación/asignación, ejecución con evidencia de entrega
+y visibilidad para el cliente. El navegador solicita permiso de ubicación y cámara sólo cuando el
+chofer activa esas funciones; si no están disponibles, la operación continúa con ingreso manual.
+
 - **Login** con selector de rol y persistencia de sesión.
 - **Configuración inicial** (`/setup`): creación del primer administrador.
 - **Clientes (ABM)**: listado con búsqueda y paginado, alta, detalle, edición y baja lógica.

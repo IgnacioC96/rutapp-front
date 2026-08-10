@@ -10,6 +10,7 @@ import { getApiErrorMessage } from '@/lib/apiClient'
 import { useUsuarios } from '@/features/usuarios/api'
 import { useRuta, useAsignarChofer } from '../api'
 import { ESTADO_RUTA_META } from '../estado'
+import { MapaRuta } from '../components/MapaRuta'
 
 export function RutaDetallePage() {
   const { id } = useParams<{ id: string }>()
@@ -72,6 +73,11 @@ export function RutaDetallePage() {
                 {ruta.total_km != null ? ` · ${ruta.total_km.toFixed(1)} km` : ''}
                 {ruta.tiempo_estimado_min != null ? ` · ${ruta.tiempo_estimado_min} min` : ''}
               </p>
+              {ruta.fecha_programada && (
+                <p className="mt-1 text-xs text-gray-mid">
+                  Programada para {new Date(`${ruta.fecha_programada}T12:00:00`).toLocaleDateString('es-AR')}
+                </p>
+              )}
             </div>
           </div>
 
@@ -120,6 +126,15 @@ export function RutaDetallePage() {
             )}
           </Card>
 
+          {ruta.chofer_id && (
+            <Card className="mb-5 bg-brand-tint">
+              <p className="text-xs text-gray-mid">Enlace público de seguimiento</p>
+              <a className="mt-1 block break-all text-sm font-semibold text-brand hover:underline" href={`/seguimiento/RUT-${ruta.id}`} target="_blank" rel="noreferrer">
+                {window.location.origin}/seguimiento/RUT-{ruta.id}
+              </a>
+            </Card>
+          )}
+
           {/* Origen */}
           {ruta.origen_descripcion && (
             <div className="mb-3 flex items-start gap-3 px-1">
@@ -132,6 +147,19 @@ export function RutaDetallePage() {
               </div>
             </div>
           )}
+
+          <section className="mb-5">
+            <h2 className="mb-1 text-sm font-semibold text-white">Recorrido</h2>
+            <p className="mb-2 text-xs text-gray-mid">Origen y paradas en orden de entrega.</p>
+            <MapaRuta
+              origen={{
+                descripcion: ruta.origen_descripcion,
+                latitud: ruta.origen_latitud,
+                longitud: ruta.origen_longitud,
+              }}
+              paradas={ruta.paradas}
+            />
+          </section>
 
           {/* Paradas ordenadas */}
           <div className="space-y-2">

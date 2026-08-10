@@ -1,4 +1,4 @@
-**
+/**
  * Tipos del contrato de API (contrato_api_mvp2).
  * Se mantienen sincronizados con el backend FastAPI.
  */
@@ -189,6 +189,9 @@ export interface Parada {
   direccion: string
   tiempo_desde_anterior_min?: number
   distancia_desde_anterior_km?: number
+  completada?: boolean
+  latitud?: number
+  longitud?: number
 }
 
 export interface Ruta {
@@ -198,7 +201,11 @@ export interface Ruta {
   total_km?: number
   tiempo_estimado_min?: number
   es_plantilla: boolean
+  /** Día operativo para el que se planificó la ruta (YYYY-MM-DD). */
+  fecha_programada?: string
   origen_descripcion?: string
+  origen_latitud?: number
+  origen_longitud?: number
   chofer_id?: string | null
   creada_en: string
   iniciada_en?: string | null
@@ -214,6 +221,7 @@ export interface RutaInput {
   origen_latitud?: number
   origen_longitud?: number
   guardar_plantilla?: boolean
+  fecha_programada?: string
 }
 
 /** Body para PATCH /rutas/{id}/asignar. */
@@ -232,6 +240,36 @@ export interface RutasListResponse {
 /** Query params de GET /rutas. */
 export interface RutasQuery {
   estado?: EstadoRuta
+  chofer_id?: string
+  solo_plantillas?: boolean
+  fecha_programada?: string
   pagina?: number
   por_pagina?: number
+}
+
+/* ---------- Sprint 3: operación, tracking y flota ---------- */
+export interface UbicacionChofer {
+  latitud: number
+  longitud: number
+  actualizada_en: string
+}
+
+export interface SeguimientoRuta {
+  codigo: string
+  ruta_nombre: string
+  estado: EstadoRuta
+  chofer_nombre: string
+  progreso: number
+  proxima_parada?: Pick<Parada, 'cliente' | 'direccion' | 'orden'>
+  ubicacion?: UbicacionChofer
+  ultima_actualizacion?: string
+}
+
+export interface Vehiculo {
+  id: string
+  patente: string
+  marca_modelo: string
+  capacidad_kg: number
+  estado: 'disponible' | 'en_ruta' | 'mantenimiento'
+  chofer_id?: string
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -10,11 +10,15 @@ import { getApiErrorMessage } from '@/lib/apiClient'
 import { cn } from '@/lib/cn'
 import { useEntregas } from '@/features/entregas/api'
 import { useCreateRuta } from '../api'
+import { MapaRuta } from '../components/MapaRuta'
+import type { Ruta } from '@/types/api'
 
 const POR_PAGINA = 100
 
 export function RutaNuevaPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const plantilla = (location.state as { plantilla?: Ruta } | null)?.plantilla
   const crear = useCreateRuta()
 
   const { data, isLoading, isError, error } = useEntregas({
@@ -22,13 +26,16 @@ export function RutaNuevaPage() {
     por_pagina: POR_PAGINA,
   })
 
-  const [nombre, setNombre] = useState('')
-  const [origen, setOrigen] = useState('')
+  const [nombre, setNombre] = useState(plantilla?.nombre ?? '')
+  const [origen, setOrigen] = useState(plantilla?.origen_descripcion ?? '')
+  const [fechaProgramada, setFechaProgramada] = useState(() => new Date().toISOString().slice(0, 10))
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
+  const [guardarPlantilla, setGuardarPlantilla] = useState(false)
   const [errores, setErrores] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string | null>(null)
 
   const entregas = data?.entregas ?? []
+  const entregasSeleccionadas = entregas.filter((entrega) => seleccion.has(entrega.id))
 
   function toggle(id: string) {
     setSeleccion((prev) => {
@@ -57,6 +64,8 @@ export function RutaNuevaPage() {
         nombre: nombre.trim(),
         entregas_ids: Array.from(seleccion),
         origen_descripcion: origen.trim(),
+        fecha_programada: fechaProgramada,
+        guardar_plantilla: guardarPlantilla,
       },
       {
         onSuccess: (ruta) => navigate(`/admin/rutas/${ruta.id}`, { replace: true }),
@@ -79,6 +88,15 @@ export function RutaNuevaPage() {
         Elegí las entregas pendientes y el origen. El sistema calcula el orden óptimo.
       </p>
 
+      {plantilla && (
+        <Card className="mb-5 border-brand/40 bg-brand-tint">
+          <p className="text-sm font-semibold text-white">Plantilla cargada: {plantilla.nombre}</p>
+          <p className="mt-1 text-xs text-gray-mid">
+            Se precargaron el nombre y el origen. Ahora seleccioná las entregas reales de esta salida.
+          </p>
+        </Card>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <Card className="space-y-3">
           <Input
@@ -89,6 +107,10 @@ export function RutaNuevaPage() {
             error={errores.nombre}
             onChange={(e) => setNombre(e.target.value)}
           />
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-mid">
+            <input type="checkbox" checked={guardarPlantilla} onChange={(e) => setGuardarPlantilla(e.target.checked)} className="accent-brand" />
+            Guardar como plantilla para reutilizar este recorrido
+          </label>
           <Input
             name="origen"
             label="Punto de origen (depósito / dirección)"
@@ -96,6 +118,13 @@ export function RutaNuevaPage() {
             value={origen}
             error={errores.origen}
             onChange={(e) => setOrigen(e.target.value)}
+          />
+          <Input
+            name="fechaProgramada"
+            label="Fecha programada"
+            type="date"
+            value={fechaProgramada}
+            onChange={(e) => setFechaProgramada(e.target.value)}
           />
         </Card>
 
@@ -166,6 +195,21 @@ export function RutaNuevaPage() {
 
           {errores.entregas && <p className="mt-2 text-sm text-error">{errores.entregas}</p>}
         </div>
+
+        {entregasSeleccionadas.length > 0 && (
+          <section>
+            <h2 className="mb-1 text-sm font-semibold text-white">Vista previa del recorrido</h2>
+            <p className="mb-2 text-xs text-gray-mid">Las ubicaciones se ajustan al optimizar la ruta.</p>
+            <MapaRuta
+              origen={{ descripcion: origen }}
+              paradas={entregasSeleccionadas.map((entrega, index) => ({
+                orden: index + 1,
+                cliente: entrega.cliente_nombre ?? 'Cliente',
+                direccion: entrega.direccion_descripcion ?? 'Dirección',
+              }))}
+            />
+          </section>
+        )}
 
         {formError && <p className="text-sm text-error">{formError}</p>}
 

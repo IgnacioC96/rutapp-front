@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Logo } from '@/components/ui/Logo'
@@ -32,6 +32,7 @@ const icons = {
   rutas: (
     <path d="M9 20.42 2.79 14.2a1 1 0 0 1 0-1.41l9-9a1 1 0 0 1 1.41 0l6.21 6.21a1 1 0 0 1 0 1.41l-9 9a1 1 0 0 1-1.41 0ZM7.5 8A1.5 1.5 0 1 0 9 9.5 1.5 1.5 0 0 0 7.5 8Z" />
   ),
+  flota: <path d="M5 16a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm14 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM3 5h12v11H3V5Zm14 4h2l3 4v3h-5V9Z" />,
 } as const
 
 const NAV: NavItem[] = [
@@ -40,6 +41,8 @@ const NAV: NavItem[] = [
   { label: 'Entregas', path: '/admin/entregas', roles: ['admin'], icon: icons.entregas },
   { label: 'Choferes', path: '/admin/usuarios', roles: ['admin'], icon: icons.choferes },
   { label: 'Rutas', path: '/admin/rutas', roles: ['admin'], icon: icons.rutas },
+  { label: 'Flota', path: '/admin/flota', roles: ['admin'], icon: icons.flota },
+  { label: 'Plantillas', path: '/admin/plantillas', roles: ['admin'], icon: icons.rutas },
   { label: 'Mis rutas', path: '/chofer', roles: ['chofer'], icon: icons.rutas },
 ]
 
@@ -53,11 +56,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const toggleTheme = useThemeStore((s) => s.toggleTheme)
 
   const [menuOpen, setMenuOpen] = useState(false)
-
-  // Cierra el drawer al navegar entre páginas.
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [location.pathname])
 
   function handleLogout() {
     logout.mutate(undefined, {
@@ -90,7 +88,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <path d="M3 6h18v2H3V6Zm0 5h18v2H3v-2Zm0 5h18v2H3v-2Z" />
           </svg>
         </button>
-        <Logo size={26} />
+        <Logo size={26} markOnly />
         <span className="text-base font-bold tracking-tight text-white">rutapp</span>
       </header>
 
@@ -114,7 +112,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Marca + cerrar (mobile) */}
         <div className="flex items-center justify-between px-5 py-5">
           <div className="flex items-center gap-2">
-            <Logo size={32} />
+            <Logo size={32} markOnly />
             <span className="text-lg font-bold tracking-tight text-white">rutapp</span>
           </div>
           <button

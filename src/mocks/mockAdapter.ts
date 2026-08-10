@@ -12,7 +12,7 @@ import { delay, getBearer, makeResponse, parseBody, reject } from './mockHelpers
 import { handleClientes, matchesClientes } from './mockClientes'
 import { handleEntregas, matchesEntregas } from './mockEntregas'
 import { handleUsuarios, matchesUsuarios } from './mockUsuarios'
-import { handleRutas, matchesRutas } from './mockRutas'
+import { getSeguimientoMock, handleRutas, matchesRutas } from './mockRutas'
 
 /**
  * ============================================================
@@ -142,6 +142,14 @@ export const mockAdapter: AxiosAdapter = async (config) => {
 
   const authResult = handleAuth(config, url, method)
   if (authResult) return authResult
+
+  const seguimientoMatch = url.match(/\/seguimiento\/([^/]+)$/)
+  if (seguimientoMatch && method === 'get') {
+    const seguimiento = getSeguimientoMock(decodeURIComponent(seguimientoMatch[1]))
+    return seguimiento
+      ? delay(makeResponse(config, 200, seguimiento))
+      : reject<ApiError>(config, 404, { detail: 'Seguimiento no encontrado' })
+  }
 
   if (matchesUsuarios(url)) {
     return handleUsuarios(config, url, method)
