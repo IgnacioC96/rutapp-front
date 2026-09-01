@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { getApiErrorMessage } from '@/lib/apiClient'
 import { useRutas } from '../api'
 import { ESTADO_RUTA_META } from '../estado'
+import { formatearTiempo } from '@/lib/formatearTiempo'
 
 export function RutasListPage() {
   const navigate = useNavigate()
@@ -63,7 +64,7 @@ export function RutasListPage() {
                   <p className="truncate text-xs text-gray-mid">
                     {ruta.paradas.length} parada(s)
                     {ruta.total_km != null ? ` · ${ruta.total_km.toFixed(1)} km` : ''}
-                    {ruta.tiempo_estimado_min != null ? ` · ${ruta.tiempo_estimado_min} min` : ''}
+                    {ruta.tiempo_estimado_min != null ? ` · ${formatearTiempo(ruta.tiempo_estimado_min)}` : ''}
                   </p>
                 </div>
                 <span className="text-brand">→</span>

@@ -11,6 +11,8 @@ import { useUsuarios } from '@/features/usuarios/api'
 import { useRuta, useAsignarChofer } from '../api'
 import { ESTADO_RUTA_META } from '../estado'
 import { MapaRuta } from '../components/MapaRuta'
+import { formatearTiempo } from '@/lib/formatearTiempo'
+import type { Parada } from '@/types/api'
 
 export function RutaDetallePage() {
   const { id } = useParams<{ id: string }>()
@@ -22,6 +24,16 @@ export function RutaDetallePage() {
 
   const [choferId, setChoferId] = useState('')
   const [asignarError, setAsignarError] = useState<string | null>(null)
+  const [ordenEntregaIds, setOrdenEntregaIds] = useState<string[]>([])
+  const [arrastrando, setArrastrando] = useState<number | null>(null)
+
+  const paradasOrdenadas: Parada[] = ruta
+    ? [...ruta.paradas].sort((a, b) => {
+      const posicionA = ordenEntregaIds.indexOf(a.entrega_id)
+      const posicionB = ordenEntregaIds.indexOf(b.entrega_id)
+      return (posicionA < 0 ? Number.MAX_SAFE_INTEGER : posicionA) - (posicionB < 0 ? Number.MAX_SAFE_INTEGER : posicionB)
+    }).map((parada, index) => ({ ...parada, orden: index + 1 }))
+    : []
 
   const choferesActivos = choferes?.filter((c) => c.activo) ?? []
   const choferAsignado = ruta?.chofer_id
@@ -35,6 +47,14 @@ export function RutaDetallePage() {
       { chofer_id: choferId },
       { onError: (err) => setAsignarError(getApiErrorMessage(err, 'No se pudo asignar')) },
     )
+  }
+
+  function reordenarParadas(origen: number, destino: number) {
+    if (origen === destino) return
+    const siguiente = paradasOrdenadas.map((parada) => parada.entrega_id)
+    const [movida] = siguiente.splice(origen, 1)
+    siguiente.splice(destino, 0, movida)
+    setOrdenEntregaIds(siguiente)
   }
 
   return (
@@ -69,9 +89,9 @@ export function RutaDetallePage() {
                 </Badge>
               </div>
               <p className="text-sm text-gray-mid">
-                {ruta.paradas.length} parada(s)
+                {paradasOrdenadas.length} parada(s)
                 {ruta.total_km != null ? ` · ${ruta.total_km.toFixed(1)} km` : ''}
-                {ruta.tiempo_estimado_min != null ? ` · ${ruta.tiempo_estimado_min} min` : ''}
+                {ruta.tiempo_estimado_min != null ? ` · ${formatearTiempo(ruta.tiempo_estimado_min)}` : ''}
               </p>
               {ruta.fecha_programada && (
                 <p className="mt-1 text-xs text-gray-mid">
@@ -157,14 +177,16 @@ export function RutaDetallePage() {
                 latitud: ruta.origen_latitud,
                 longitud: ruta.origen_longitud,
               }}
-              paradas={ruta.paradas}
+              paradas={paradasOrdenadas}
             />
           </section>
 
           {/* Paradas ordenadas */}
           <div className="space-y-2">
-            {ruta.paradas.map((parada) => (
-              <Card key={`${parada.orden}-${parada.entrega_id}`} className="flex gap-3">
+            <p className="text-xs text-gray-mid">Arrastrá las paradas para cambiar el orden de visualización.</p>
+            {paradasOrdenadas.map((parada, index) => (
+              <Card key={parada.entrega_id} className={`flex gap-3 transition-opacity ${arrastrando === index ? 'opacity-50' : ''}`} draggable onDragStart={() => setArrastrando(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (arrastrando != null) reordenarParadas(arrastrando, index); setArrastrando(null) }} onDragEnd={() => setArrastrando(null)}>
+                <span className="cursor-grab pt-1 text-gray-dark" aria-label="Arrastrar parada">⋮⋮</span>
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
                   {parada.orden}
                 </span>
@@ -182,7 +204,7 @@ export function RutaDetallePage() {
                         ? ' · '
                         : ''}
                       {parada.tiempo_desde_anterior_min != null
-                        ? `${parada.tiempo_desde_anterior_min} min desde la anterior`
+                        ? `${formatearTiempo(parada.tiempo_desde_anterior_min)} desde la anterior`
                         : ''}
                     </p>
                   )}

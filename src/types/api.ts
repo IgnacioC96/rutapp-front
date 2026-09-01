@@ -62,6 +62,9 @@ export interface Direccion {
   descripcion: string
   referencia?: string
   es_principal: boolean
+  /** Coordenadas seleccionadas desde el mapa (opcionales para clientes existentes). */
+  latitud?: number
+  longitud?: number
 }
 
 export interface Cliente {
@@ -271,5 +274,27 @@ export interface Vehiculo {
   marca_modelo: string
   capacidad_kg: number
   estado: 'disponible' | 'en_ruta' | 'mantenimiento'
+  chofer_id?: string | null
+  chofer_nombre?: string | null
+}
+
+/** Body de POST /vehiculos. El estado inicial lo determina el backend. */
+export interface VehiculoCreateInput {
+  patente: string
+  marca_modelo: string
+  capacidad_kg: number
+  chofer_id?: string
+}
+
+/** Body de PUT /vehiculos/{id}. La patente no se puede modificar. */
+export interface VehiculoUpdateInput {
+  marca_modelo?: string
+  capacidad_kg?: number
+  estado?: Vehiculo['estado']
+  chofer_id?: string | null
+}
+
+export interface VehiculosQuery {
+  estado?: Vehiculo['estado']
   chofer_id?: string
 }

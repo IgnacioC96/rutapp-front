@@ -1,8 +1,11 @@
 import { useState } from 'react'
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { divIcon, type LatLngExpression } from 'leaflet'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/cn'
 import type { Cliente, ClienteInput, Direccion } from '@/types/api'
+import 'leaflet/dist/leaflet.css'
 
 interface ClienteFormProps {
   initial?: Cliente
@@ -14,6 +17,30 @@ interface ClienteFormProps {
 
 const MAX_DIRECCIONES = 3
 const WHATSAPP_REGEX = /^\+\d{10,15}$/
+const CABA: LatLngExpression = [-34.6037, -58.3816]
+
+function CentrarMapa({ posicion }: { posicion: LatLngExpression }) {
+  const map = useMap()
+  map.setView(posicion)
+  return null
+}
+
+function SeleccionarPunto({ onChange }: { onChange: (latitud: number, longitud: number) => void }) {
+  useMapEvents({ click: (event) => onChange(event.latlng.lat, event.latlng.lng) })
+  return null
+}
+
+function PinDireccion({ direccion, onChange }: { direccion: Direccion; onChange: (latitud: number, longitud: number) => void }) {
+  const posicion: LatLngExpression = direccion.latitud != null && direccion.longitud != null ? [direccion.latitud, direccion.longitud] : CABA
+  return <div className="overflow-hidden rounded-card border border-stroke">
+    <MapContainer center={posicion} zoom={13} scrollWheelZoom={false} className="h-48 w-full" aria-label="Mapa para ubicar la dirección" whenReady={() => undefined}>
+      <CentrarMapa posicion={posicion} /><SeleccionarPunto onChange={onChange} />
+      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <Marker position={posicion} draggable icon={divIcon({ className: '', html: '<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#f26522;border:3px solid white;transform:rotate(-45deg);box-shadow:0 1px 4px #000"></span>', iconSize: [22, 22], iconAnchor: [11, 22] })} eventHandlers={{ dragend: (event) => { const punto = event.target.getLatLng(); onChange(punto.lat, punto.lng) } }} />
+    </MapContainer>
+    <p className="px-3 py-2 text-xs text-gray-mid">Hacé clic en el mapa o arrastrá el pin para ajustar la ubicación.</p>
+  </div>
+}
 
 function emptyDireccion(es_principal = false): Direccion {
   return { descripcion: '', referencia: '', es_principal }
@@ -148,6 +175,7 @@ export function ClienteForm({
               onChange={(e) => updateDireccion(i, { descripcion: e.target.value })}
               error={errors[`dir-${i}`]}
             />
+            <PinDireccion direccion={dir} onChange={(latitud, longitud) => updateDireccion(i, { latitud, longitud })} />
             <Input
               name={`dir-ref-${i}`}
               placeholder="Referencia (piso, depto, indicaciones)"
