@@ -4,6 +4,7 @@ import type {
   Ruta,
   RutaAsignarInput,
   RutaInput,
+  ReordenarParadasInput,
   RutasListResponse,
   RutasQuery,
   SeguimientoRuta,
@@ -36,6 +37,11 @@ async function createRuta(payload: RutaInput): Promise<Ruta> {
 
 async function asignarChofer(id: string, payload: RutaAsignarInput): Promise<Ruta> {
   const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/asignar`, payload)
+  return data
+}
+
+async function reordenarParadas(id: string, payload: ReordenarParadasInput): Promise<Ruta> {
+  const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/paradas`, payload)
   return data
 }
 
@@ -97,6 +103,14 @@ export function useAsignarChofer(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: RutaAsignarInput) => asignarChofer(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
+export function useReordenarParadas(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: ReordenarParadasInput) => reordenarParadas(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
 }

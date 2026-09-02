@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/Select'
 import { Spinner } from '@/components/ui/Spinner'
 import { getApiErrorMessage } from '@/lib/apiClient'
 import { useUsuarios } from '@/features/usuarios/api'
-import { useRuta, useAsignarChofer } from '../api'
+import { useRuta, useAsignarChofer, useReordenarParadas } from '../api'
 import { ESTADO_RUTA_META } from '../estado'
 import { MapaRuta } from '../components/MapaRuta'
 import { formatearTiempo } from '@/lib/formatearTiempo'
@@ -21,11 +21,13 @@ export function RutaDetallePage() {
   const { data: ruta, isLoading, isError, error } = useRuta(id)
   const { data: choferes } = useUsuarios({ rol: 'chofer' })
   const asignar = useAsignarChofer(id ?? '')
+  const guardarOrden = useReordenarParadas(id ?? '')
 
   const [choferId, setChoferId] = useState('')
   const [asignarError, setAsignarError] = useState<string | null>(null)
   const [ordenEntregaIds, setOrdenEntregaIds] = useState<string[]>([])
   const [arrastrando, setArrastrando] = useState<number | null>(null)
+  const [ordenError, setOrdenError] = useState<string | null>(null)
 
   const paradasOrdenadas: Parada[] = ruta
     ? [...ruta.paradas].sort((a, b) => {
@@ -36,6 +38,8 @@ export function RutaDetallePage() {
     : []
 
   const choferesActivos = choferes?.filter((c) => c.activo) ?? []
+  const puedeReordenar = ruta?.estado === 'pendiente' || ruta?.estado === 'asignada'
+  const hayCambiosDeOrden = ordenEntregaIds.length > 0 && ordenEntregaIds.some((idEntrega, indice) => ruta?.paradas[indice]?.entrega_id !== idEntrega)
   const choferAsignado = ruta?.chofer_id
     ? choferes?.find((c) => c.id === ruta.chofer_id)
     : undefined
@@ -55,6 +59,22 @@ export function RutaDetallePage() {
     const [movida] = siguiente.splice(origen, 1)
     siguiente.splice(destino, 0, movida)
     setOrdenEntregaIds(siguiente)
+  }
+
+  function guardarNuevoOrden() {
+    const paradasSinId = paradasOrdenadas.some((parada) => !parada.parada_id && !parada.entrega_id)
+    if (paradasSinId) {
+      setOrdenError('No se pudo identificar una de las paradas para guardar su orden.')
+      return
+    }
+    setOrdenError(null)
+    guardarOrden.mutate(
+      { paradas: paradasOrdenadas.map((parada) => ({ parada_id: parada.parada_id ?? parada.entrega_id, orden: parada.orden })) },
+      {
+        onSuccess: () => setOrdenEntregaIds([]),
+        onError: (err) => setOrdenError(getApiErrorMessage(err, 'No se pudo guardar el nuevo orden')),
+      },
+    )
   }
 
   return (
@@ -183,10 +203,11 @@ export function RutaDetallePage() {
 
           {/* Paradas ordenadas */}
           <div className="space-y-2">
-            <p className="text-xs text-gray-mid">Arrastrá las paradas para cambiar el orden de visualización.</p>
+            <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-gray-mid">{puedeReordenar ? 'Arrastrá las paradas y guardá el nuevo orden.' : 'Esta ruta ya no permite modificar el orden de sus paradas.'}</p>{puedeReordenar && <Button variant="secondary" className="px-3 py-2 text-xs" disabled={!hayCambiosDeOrden} loading={guardarOrden.isPending} onClick={guardarNuevoOrden}>Guardar orden</Button>}</div>
+            {ordenError && <p className="rounded-card bg-error/10 px-3 py-2 text-sm text-error">{ordenError}</p>}
             {paradasOrdenadas.map((parada, index) => (
-              <Card key={parada.entrega_id} className={`flex gap-3 transition-opacity ${arrastrando === index ? 'opacity-50' : ''}`} draggable onDragStart={() => setArrastrando(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => { if (arrastrando != null) reordenarParadas(arrastrando, index); setArrastrando(null) }} onDragEnd={() => setArrastrando(null)}>
-                <span className="cursor-grab pt-1 text-gray-dark" aria-label="Arrastrar parada">⋮⋮</span>
+              <Card key={parada.parada_id ?? parada.entrega_id} className={`flex gap-3 transition-opacity ${arrastrando === index ? 'opacity-50' : ''}`} draggable={puedeReordenar} onDragStart={() => puedeReordenar && setArrastrando(index)} onDragOver={(event) => { if (puedeReordenar) event.preventDefault() }} onDrop={() => { if (puedeReordenar && arrastrando != null) reordenarParadas(arrastrando, index); setArrastrando(null) }} onDragEnd={() => setArrastrando(null)}>
+                {puedeReordenar && <span className="cursor-grab pt-1 text-gray-dark" aria-label="Arrastrar parada">⋮⋮</span>}
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
                   {parada.orden}
                 </span>

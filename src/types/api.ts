@@ -186,6 +186,8 @@ export type EstadoRuta =
   | 'finalizada'
 
 export interface Parada {
+  /** ID interno de la parada, requerido para persistir su posición. */
+  parada_id?: string
   orden: number
   entrega_id: string
   cliente: string
@@ -230,6 +232,11 @@ export interface RutaInput {
 /** Body para PATCH /rutas/{id}/asignar. */
 export interface RutaAsignarInput {
   chofer_id: string
+}
+
+/** Body de PATCH /rutas/{id}/paradas. */
+export interface ReordenarParadasInput {
+  paradas: { parada_id: string; orden: number }[]
 }
 
 /** Respuesta de GET /rutas (listado paginado). */
