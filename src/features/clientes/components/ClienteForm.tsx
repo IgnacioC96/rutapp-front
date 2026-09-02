@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import { divIcon, type LatLngExpression } from 'leaflet'
 import { Button } from '@/components/ui/Button'
@@ -18,10 +18,16 @@ interface ClienteFormProps {
 const MAX_DIRECCIONES = 3
 const WHATSAPP_REGEX = /^\+\d{10,15}$/
 const CABA: LatLngExpression = [-34.6037, -58.3816]
+const PIN_ICON = divIcon({ className: '', html: '<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#f26522;border:3px solid white;transform:rotate(-45deg);box-shadow:0 1px 4px #000"></span>', iconSize: [22, 22], iconAnchor: [11, 22] })
+
+interface ResultadoNominatim {
+  lat: string
+  lon: string
+}
 
 function CentrarMapa({ posicion }: { posicion: LatLngExpression }) {
   const map = useMap()
-  map.setView(posicion)
+  useEffect(() => { map.setView(posicion) }, [map, posicion])
   return null
 }
 
@@ -32,13 +38,43 @@ function SeleccionarPunto({ onChange }: { onChange: (latitud: number, longitud: 
 
 function PinDireccion({ direccion, onChange }: { direccion: Direccion; onChange: (latitud: number, longitud: number) => void }) {
   const posicion: LatLngExpression = direccion.latitud != null && direccion.longitud != null ? [direccion.latitud, direccion.longitud] : CABA
+  const [estadoBusqueda, setEstadoBusqueda] = useState<'idle' | 'buscando' | 'sin_resultado'>('idle')
+  const onChangeRef = useRef(onChange)
+  const descripcionInicial = useRef(direccion.descripcion.trim())
+  const teniaCoordenadasIniciales = useRef(direccion.latitud != null && direccion.longitud != null)
+
+  useEffect(() => { onChangeRef.current = onChange }, [onChange])
+
+  useEffect(() => {
+    const direccionTexto = direccion.descripcion.trim()
+    if (direccionTexto.length < 6 || (direccionTexto === descripcionInicial.current && teniaCoordenadasIniciales.current)) return
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      setEstadoBusqueda('buscando')
+      const params = new URLSearchParams({ format: 'jsonv2', limit: '1', countrycodes: 'ar', q: direccionTexto })
+      fetch(`https://nominatim.openstreetmap.org/search?${params}`, { signal: controller.signal })
+        .then((response) => response.ok ? response.json() as Promise<ResultadoNominatim[]> : Promise.reject(new Error('Nominatim no respondió')))
+        .then((resultados) => {
+          const resultado = resultados[0]
+          if (!resultado) { setEstadoBusqueda('sin_resultado'); return }
+          const latitud = Number(resultado.lat)
+          const longitud = Number(resultado.lon)
+          if (!Number.isFinite(latitud) || !Number.isFinite(longitud)) { setEstadoBusqueda('sin_resultado'); return }
+          onChangeRef.current(latitud, longitud)
+          setEstadoBusqueda('idle')
+        })
+        .catch((error: unknown) => { if ((error as DOMException).name !== 'AbortError') setEstadoBusqueda('sin_resultado') })
+    }, 700)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [direccion.descripcion])
+
   return <div className="overflow-hidden rounded-card border border-stroke">
     <MapContainer center={posicion} zoom={13} scrollWheelZoom={false} className="h-48 w-full" aria-label="Mapa para ubicar la dirección" whenReady={() => undefined}>
       <CentrarMapa posicion={posicion} /><SeleccionarPunto onChange={onChange} />
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-      <Marker position={posicion} draggable icon={divIcon({ className: '', html: '<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#f26522;border:3px solid white;transform:rotate(-45deg);box-shadow:0 1px 4px #000"></span>', iconSize: [22, 22], iconAnchor: [11, 22] })} eventHandlers={{ dragend: (event) => { const punto = event.target.getLatLng(); onChange(punto.lat, punto.lng) } }} />
+      <Marker position={posicion} draggable icon={PIN_ICON} eventHandlers={{ dragend: (event) => { const punto = event.target.getLatLng(); onChange(punto.lat, punto.lng) } }} />
     </MapContainer>
-    <p className="px-3 py-2 text-xs text-gray-mid">Hacé clic en el mapa o arrastrá el pin para ajustar la ubicación.</p>
+    <p className="px-3 py-2 text-xs text-gray-mid">{estadoBusqueda === 'buscando' ? 'Buscando la dirección…' : estadoBusqueda === 'sin_resultado' ? 'No encontramos la dirección; ubicá el pin manualmente.' : 'Hacé clic en el mapa o arrastrá el pin para ajustar la ubicación.'}</p>
   </div>
 }
 
