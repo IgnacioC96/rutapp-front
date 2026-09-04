@@ -1,6 +1,7 @@
 import type { InternalAxiosRequestConfig } from 'axios'
 import type {
   ApiError,
+  ParadaExtraInput,
   Parada,
   Ruta,
   RutaAsignarInput,
@@ -24,6 +25,10 @@ const ubicaciones = new Map<string, UbicacionChofer>()
 const PARADAS_DEMO = [
   [-34.6037, -58.3816], [-34.5864, -58.4351], [-34.5622, -58.4587],
 ] as const
+
+function getParadaMockId(parada: Parada): string | undefined {
+  return parada.parada_id ?? parada.id ?? parada.entrega_id ?? undefined
+}
 
 export function matchesRutas(url: string): boolean {
   return url.includes('/rutas')
@@ -62,7 +67,7 @@ export async function handleRutas(
     if (ruta.estado !== 'en_curso') return reject<ApiError>(config, 400, { detail: 'Iniciá la ruta antes de confirmar entregas' })
     if (body.codigo !== `QR-${parada.entrega_id}`) return reject<ApiError>(config, 400, { detail: 'El código QR no corresponde a esta entrega' })
     parada.completada = true
-    const entrega = findEntregaMock(parada.entrega_id)
+    const entrega = parada.entrega_id ? findEntregaMock(parada.entrega_id) : undefined
     if (entrega) entrega.estado = 'completada'
     return makeResponse(config, 200, ruta)
   }
@@ -87,10 +92,49 @@ export async function handleRutas(
       ruta.estado = 'en_curso'; ruta.iniciada_en = new Date().toISOString()
     } else {
       if (ruta.estado !== 'en_curso') return reject<ApiError>(config, 400, { detail: 'La ruta no está en curso' })
-      if (ruta.paradas.some((p) => !p.completada)) return reject<ApiError>(config, 400, { detail: 'Confirmá todas las entregas antes de finalizar' })
-      ruta.estado = 'finalizada'; ruta.finalizada_en = new Date().toISOString()
+      const pendientes = ruta.paradas.filter((p) => !p.es_parada_extra && !p.completada)
+      if (pendientes.length > 0) {
+        pendientes.forEach((p) => {
+          const entrega = p.entrega_id ? findEntregaMock(p.entrega_id) : undefined
+          if (entrega) entrega.estado = 'pendiente'
+        })
+        ruta.estado = 'finalizada'
+      } else {
+        ruta.estado = 'completada'
+      }
+      ruta.finalizada_en = new Date().toISOString()
     }
     return makeResponse(config, 200, ruta)
+  }
+
+  // POST /rutas/{id}/paradas/extra
+  const paradaExtraMatch = url.match(/\/rutas\/([^/]+)\/paradas\/extra$/)
+  if (paradaExtraMatch && method === 'post') {
+    const ruta = rutas.find((r) => r.id === paradaExtraMatch[1])
+    if (!ruta) return reject<ApiError>(config, 404, { detail: 'Ruta no encontrada' })
+    if (ruta.estado !== 'pendiente' && ruta.estado !== 'asignada') {
+      return reject<ApiError>(config, 400, { detail: 'Solo se pueden agregar paradas en rutas pendientes o asignadas' })
+    }
+    const body = parseBody<ParadaExtraInput>(config)
+    if (!body.descripcion?.trim()) return reject<ApiError>(config, 422, { detail: 'Ingresá una descripción' })
+
+    const ordenNueva = body.orden ?? Math.max(...ruta.paradas.map((p) => p.orden), 0) + 1
+    ruta.paradas.forEach((parada) => {
+      if (parada.orden >= ordenNueva) parada.orden += 1
+    })
+    ruta.paradas.push({
+      id: uid('parada'),
+      orden: ordenNueva,
+      entrega_id: null,
+      cliente: null,
+      direccion: body.direccion?.trim(),
+      completada: false,
+      es_parada_extra: true,
+      descripcion_extra: body.descripcion.trim(),
+      direccion_extra: body.direccion?.trim(),
+    })
+    ruta.paradas.sort((a, b) => a.orden - b.orden)
+    return makeResponse(config, 201, ruta)
   }
 
   // PATCH /rutas/{id}/asignar
@@ -177,6 +221,7 @@ export async function handleRutas(
         totalKm += km
         totalMin += min
         paradas.push({
+          id: uid('parada'),
           orden: i + 1,
           entrega_id: entrega.id,
           cliente: entrega.cliente_nombre ?? 'Cliente',
@@ -210,6 +255,20 @@ export async function handleRutas(
       rutas.push(ruta)
       return makeResponse(config, 201, ruta)
     }
+  }
+
+  // PATCH /rutas/{id}/paradas
+  const reordenarMatch = url.match(/\/rutas\/([^/]+)\/paradas$/)
+  if (reordenarMatch && method === 'patch') {
+    const ruta = rutas.find((r) => r.id === reordenarMatch[1])
+    if (!ruta) return reject<ApiError>(config, 404, { detail: 'Ruta no encontrada' })
+    const body = parseBody<{ paradas: { parada_id: string; orden: number }[] }>(config)
+    body.paradas.forEach((item) => {
+      const parada = ruta.paradas.find((p) => getParadaMockId(p) === item.parada_id)
+      if (parada) parada.orden = item.orden
+    })
+    ruta.paradas.sort((a, b) => a.orden - b.orden)
+    return makeResponse(config, 200, ruta)
   }
 
   return reject<ApiError>(config, 404, {

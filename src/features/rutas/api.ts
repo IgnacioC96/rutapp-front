@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/apiClient'
 import type {
+  ParadaExtraInput,
   Ruta,
   RutaAsignarInput,
   RutaInput,
@@ -42,6 +43,11 @@ async function asignarChofer(id: string, payload: RutaAsignarInput): Promise<Rut
 
 async function reordenarParadas(id: string, payload: ReordenarParadasInput): Promise<Ruta> {
   const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/paradas`, payload)
+  return data
+}
+
+async function agregarParadaExtra(id: string, payload: ParadaExtraInput): Promise<Ruta> {
+  const { data } = await apiClient.post<Ruta>(`/rutas/${id}/paradas/extra`, payload)
   return data
 }
 
@@ -111,6 +117,14 @@ export function useReordenarParadas(id: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: ReordenarParadasInput) => reordenarParadas(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
+export function useAgregarParadaExtra(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: ParadaExtraInput) => agregarParadaExtra(id, payload),
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
 }

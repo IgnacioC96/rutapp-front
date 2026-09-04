@@ -1,9 +1,10 @@
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import type { Parada } from '@/types/api'
+import { getParadaDireccion, getParadaTitulo } from '../paradas'
 import 'leaflet/dist/leaflet.css'
 
-type Punto = Pick<Parada, 'orden' | 'cliente' | 'direccion' | 'latitud' | 'longitud'>
+type Punto = Pick<Parada, 'orden' | 'cliente' | 'direccion' | 'latitud' | 'longitud' | 'es_parada_extra' | 'descripcion_extra' | 'direccion_extra'>
 
 const CABA: LatLngExpression = [-34.6037, -58.3816]
 
@@ -40,9 +41,9 @@ export function MapaRuta({
         <Popup><strong>Origen</strong><br />{origen?.descripcion ?? 'Punto de origen'}</Popup><Tooltip permanent direction="top">Origen</Tooltip>
       </CircleMarker>
       <Polyline positions={recorrido} pathOptions={{ color: '#f26522', weight: 4, opacity: 0.85 }} />
-      {puntos.map((parada) => <CircleMarker key={`${parada.orden}-${parada.direccion}`} center={parada.posicion} radius={12} pathOptions={{ color: '#ffffff', fillColor: '#1a1a1a', fillOpacity: 1, weight: 2 }}>
+      {puntos.map((parada) => <CircleMarker key={`${parada.orden}-${getParadaDireccion(parada)}`} center={parada.posicion} radius={12} pathOptions={{ color: '#ffffff', fillColor: '#1a1a1a', fillOpacity: 1, weight: 2 }}>
         <Tooltip permanent direction="center" className="!border-0 !bg-transparent !p-0 !font-bold !text-white !shadow-none">{parada.orden}</Tooltip>
-        <Popup><strong>{parada.cliente}</strong><br />{parada.direccion}</Popup>
+        <Popup><strong>{getParadaTitulo(parada)}</strong><br />{getParadaDireccion(parada)}</Popup>
       </CircleMarker>)}
     </MapContainer>
   </div>

@@ -11,6 +11,7 @@ import { getApiErrorMessage } from '@/lib/apiClient'
 import { useAuthStore } from '@/store/authStore'
 import { ESTADO_RUTA_META } from '@/features/rutas/estado'
 import { useActualizarUbicacion, useConfirmarEntregaQr, useFinalizarRuta, useIniciarRuta, useRutas } from '@/features/rutas/api'
+import { esParadaEntrega, getParadaDireccion, getParadaKey, getParadaTitulo } from '@/features/rutas/paradas'
 import type { Parada, Ruta } from '@/types/api'
 
 function QrConfirmation({ ruta, parada, onClose }: { ruta: Ruta; parada: Parada; onClose: () => void }) {
@@ -40,6 +41,10 @@ function QrConfirmation({ ruta, parada, onClose }: { ruta: Ruta; parada: Parada;
   }
   function confirmarQr() {
     setError(null)
+    if (!parada.entrega_id) {
+      setError('Esta parada no tiene una entrega asociada.')
+      return
+    }
     confirmar.mutate({ entregaId: parada.entrega_id, codigo: codigo.trim() }, { onSuccess: onClose, onError: (err) => setError(getApiErrorMessage(err, 'No se pudo validar el código')) })
   }
   return <Modal open onClose={onClose} title="Confirmar entrega con QR">
@@ -47,16 +52,59 @@ function QrConfirmation({ ruta, parada, onClose }: { ruta: Ruta; parada: Parada;
     <Input autoFocus name="codigoQr" label="Código QR" placeholder="QR-entrega-id" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
     {!camaraActiva && <button type="button" onClick={() => void abrirCamara()} className="mt-3 text-sm font-semibold text-brand hover:underline">Abrir lector con cámara</button>}
     {camaraActiva && <video ref={video} muted playsInline className="mt-3 aspect-video w-full rounded-card bg-black object-cover" />}
-    <p className="mt-2 text-xs text-gray-dark">Demo: QR-{parada.entrega_id}</p>
+    {parada.entrega_id && <p className="mt-2 text-xs text-gray-dark">Demo: QR-{parada.entrega_id}</p>}
     {error && <p className="mt-3 text-sm text-error">{error}</p>}
     <div className="mt-5 flex justify-end gap-2"><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button onClick={confirmarQr} loading={confirmar.isPending} disabled={!codigo.trim()}>Validar QR</Button></div>
   </Modal>
+}
+
+function ConfirmarFinalizacionModal({
+  ruta,
+  pendientes,
+  onClose,
+}: {
+  ruta: Ruta
+  pendientes: number
+  onClose: () => void
+}) {
+  const finalizar = useFinalizarRuta(ruta.id)
+  const [error, setError] = useState<string | null>(null)
+
+  function confirmar() {
+    setError(null)
+    finalizar.mutate(undefined, {
+      onSuccess: onClose,
+      onError: (err) => setError(getApiErrorMessage(err, 'No se pudo finalizar la ruta')),
+    })
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Finalizar ruta">
+      <p className="text-sm text-gray-mid">
+        Hay {pendientes} entrega(s) sin confirmar. ¿Querés finalizar igual?
+      </p>
+      <p className="mt-2 text-xs text-gray-dark">
+        Las entregas pendientes vuelven a quedar disponibles para reagendar.
+      </p>
+      {error && <p className="mt-3 text-sm text-error">{error}</p>}
+      <div className="mt-5 flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose} disabled={finalizar.isPending}>
+          Cancelar
+        </Button>
+        <Button onClick={confirmar} loading={finalizar.isPending}>
+          Finalizar igual
+        </Button>
+      </div>
+    </Modal>
+  )
 }
 
 export function DashboardChofer() {
   const user = useAuthStore((s) => s.user)
   const { data, isLoading, isError, error } = useRutas({ chofer_id: user?.id, por_pagina: 20 })
   const [qrParada, setQrParada] = useState<{ ruta: Ruta; parada: Parada } | null>(null)
+  const [rutaFinalizar, setRutaFinalizar] = useState<{ ruta: Ruta; pendientes: number } | null>(null)
+  const [finalizarError, setFinalizarError] = useState<string | null>(null)
   const activa = data?.rutas.find((r) => r.estado === 'en_curso')
   const iniciar = useIniciarRuta(data?.rutas.find((r) => r.estado === 'asignada')?.id ?? '')
   const finalizar = useFinalizarRuta(activa?.id ?? '')
@@ -74,21 +122,35 @@ export function DashboardChofer() {
     return () => window.clearInterval(id)
   }, [activa, ubicar]) // La ubicación se informa cada 15 segundos mientras una ruta está activa.
 
+  function pedirFinalizacion(ruta: Ruta) {
+    const pendientes = ruta.paradas.filter((parada) => esParadaEntrega(parada) && !parada.completada).length
+    setFinalizarError(null)
+    if (pendientes > 0) {
+      setRutaFinalizar({ ruta, pendientes })
+      return
+    }
+    finalizar.mutate(undefined, {
+      onError: (err) => setFinalizarError(getApiErrorMessage(err, 'No se pudo finalizar la ruta')),
+    })
+  }
+
   return <AppShell>
     <div className="mb-5"><h1 className="text-lg font-bold text-white">Mi ruta de hoy</h1><p className="text-sm text-gray-mid">Tus paradas y confirmaciones de entrega.</p></div>
     {isLoading && <div className="flex justify-center py-12"><Spinner size={28} /></div>}
     {isError && <p className="rounded-card border border-error/40 bg-error/10 p-3 text-sm text-error">{getApiErrorMessage(error, 'No se pudo cargar tu ruta')}</p>}
     {data && data.rutas.length === 0 && <EmptyState title="No tenés rutas asignadas" description="Cuando el administrador te asigne una ruta, aparecerá acá." />}
     {data?.rutas.map((ruta) => {
-      const completas = ruta.paradas.filter((p) => p.completada).length
+      const entregas = ruta.paradas.filter(esParadaEntrega)
+      const completas = entregas.filter((p) => p.completada).length
       const puedeIniciar = ruta.estado === 'asignada'
-      const puedeFinalizar = ruta.estado === 'en_curso' && completas === ruta.paradas.length
       return <section key={ruta.id} className="mb-6 space-y-3">
-        <Card className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex gap-2"><h2 className="font-semibold text-white">{ruta.nombre}</h2><Badge tone={ESTADO_RUTA_META[ruta.estado].tone}>{ESTADO_RUTA_META[ruta.estado].label}</Badge></div><p className="text-xs text-gray-mid">{completas}/{ruta.paradas.length} entregas · {ruta.total_km ?? 0} km</p></div><div className="flex gap-2">{puedeIniciar && <Button onClick={() => iniciar.mutate()} loading={iniciar.isPending}>Iniciar ruta</Button>}{ruta.estado === 'en_curso' && <Button variant="secondary" onClick={() => finalizar.mutate()} loading={finalizar.isPending} disabled={!puedeFinalizar}>Finalizar ruta</Button>}</div></Card>
+        <Card className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex gap-2"><h2 className="font-semibold text-white">{ruta.nombre}</h2><Badge tone={ESTADO_RUTA_META[ruta.estado].tone}>{ESTADO_RUTA_META[ruta.estado].label}</Badge></div><p className="text-xs text-gray-mid">{completas}/{entregas.length} entregas · {ruta.total_km ?? 0} km</p></div><div className="flex gap-2">{puedeIniciar && <Button onClick={() => iniciar.mutate()} loading={iniciar.isPending}>Iniciar ruta</Button>}{ruta.estado === 'en_curso' && <Button variant="secondary" onClick={() => pedirFinalizacion(ruta)} loading={finalizar.isPending}>Finalizar ruta</Button>}</div></Card>
+        {finalizarError && ruta.estado === 'en_curso' && <p className="rounded-card bg-error/10 px-3 py-2 text-sm text-error">{finalizarError}</p>}
         {ruta.estado === 'en_curso' && <p className="text-xs text-success">● Ubicación compartida automáticamente cada 15 segundos.</p>}
-        {ruta.paradas.map((parada) => <Card key={parada.entrega_id} className="flex items-center gap-3"><span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${parada.completada ? 'bg-success text-white' : 'bg-brand text-white'}`}>{parada.completada ? '✓' : parada.orden}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-white">{parada.cliente}</p><p className="truncate text-xs text-gray-mid">{parada.direccion}</p></div>{!parada.completada && ruta.estado === 'en_curso' && <Button className="px-3 py-2" onClick={() => setQrParada({ ruta, parada })}>Confirmar QR</Button>}</Card>)}
+        {ruta.paradas.map((parada, index) => <Card key={getParadaKey(parada, index)} className="flex items-center gap-3"><span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${parada.completada ? 'bg-success text-white' : 'bg-brand text-white'}`}>{parada.completada ? '✓' : parada.orden}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-semibold text-white">{getParadaTitulo(parada)}</p>{parada.es_parada_extra && <Badge tone="brand">Operativa</Badge>}</div><p className="truncate text-xs text-gray-mid">{getParadaDireccion(parada)}</p></div>{esParadaEntrega(parada) && !parada.completada && ruta.estado === 'en_curso' && <Button className="px-3 py-2" onClick={() => setQrParada({ ruta, parada })}>Confirmar QR</Button>}</Card>)}
       </section>
     })}
     {qrParada && <QrConfirmation {...qrParada} onClose={() => setQrParada(null)} />}
+    {rutaFinalizar && <ConfirmarFinalizacionModal {...rutaFinalizar} onClose={() => setRutaFinalizar(null)} />}
   </AppShell>
 }

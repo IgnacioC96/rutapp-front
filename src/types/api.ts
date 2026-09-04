@@ -186,17 +186,22 @@ export type EstadoRuta =
   | 'finalizada'
 
 export interface Parada {
+  /** ID de la parada en el backend nuevo. */
+  id?: string
   /** ID interno de la parada, requerido para persistir su posición. */
   parada_id?: string
   orden: number
-  entrega_id: string
-  cliente: string
-  direccion: string
+  entrega_id?: string | null
+  cliente?: string | null
+  direccion?: string | null
   tiempo_desde_anterior_min?: number
   distancia_desde_anterior_km?: number
   completada?: boolean
   latitud?: number
   longitud?: number
+  es_parada_extra?: boolean
+  descripcion_extra?: string | null
+  direccion_extra?: string | null
 }
 
 export interface Ruta {
@@ -237,6 +242,15 @@ export interface RutaAsignarInput {
 /** Body de PATCH /rutas/{id}/paradas. */
 export interface ReordenarParadasInput {
   paradas: { parada_id: string; orden: number }[]
+}
+
+/** Body de POST /rutas/{id}/paradas/extra. */
+export interface ParadaExtraInput {
+  descripcion: string
+  direccion?: string
+  orden?: number
+  latitud?: number
+  longitud?: number
 }
 
 /** Respuesta de GET /rutas (listado paginado). */
