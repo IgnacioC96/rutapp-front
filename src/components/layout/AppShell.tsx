@@ -95,7 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Backdrop del drawer — solo mobile cuando está abierto */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-[1001] bg-black/60 lg:hidden"
           onClick={() => setMenuOpen(false)}
           aria-hidden
         />
@@ -104,7 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Sidebar / drawer */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-stroke bg-surface',
+          'fixed inset-y-0 left-0 z-[1002] flex w-60 flex-col border-r border-stroke bg-surface',
           'transition-transform duration-200 lg:translate-x-0',
           menuOpen ? 'translate-x-0' : '-translate-x-full',
         )}
