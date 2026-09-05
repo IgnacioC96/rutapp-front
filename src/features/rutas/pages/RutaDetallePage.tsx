@@ -263,11 +263,11 @@ export function RutaDetallePage() {
             )}
           </Card>
 
-          {ruta.chofer_id && (
+          {ruta.chofer_id && ruta.codigo_seguimiento && (
             <Card className="mb-5 bg-brand-tint">
               <p className="text-xs text-gray-mid">Enlace público de seguimiento</p>
-              <a className="mt-1 block break-all text-sm font-semibold text-brand hover:underline" href={`/seguimiento/RUT-${ruta.id}`} target="_blank" rel="noreferrer">
-                {window.location.origin}/seguimiento/RUT-{ruta.id}
+              <a className="mt-1 block break-all text-sm font-semibold text-brand hover:underline" href={`/seguimiento/${ruta.codigo_seguimiento}`} target="_blank" rel="noreferrer">
+                {window.location.origin}/seguimiento/{ruta.codigo_seguimiento}
               </a>
             </Card>
           )}
