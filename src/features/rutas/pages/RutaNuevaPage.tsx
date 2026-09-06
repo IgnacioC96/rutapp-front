@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/Button'
@@ -28,6 +28,31 @@ export function RutaNuevaPage() {
 
   const [nombre, setNombre] = useState(plantilla?.nombre ?? '')
   const [origen, setOrigen] = useState(plantilla?.origen_descripcion ?? '')
+const [origenCoords, setOrigenCoords] = useState<{ latitud: number; longitud: number } | null>(null)
+
+// Geocodifica el origen con Nominatim cuando el usuario deja de escribir
+useEffect(() => {
+  if (!origen || origen.length < 8) {
+    setOrigenCoords(null)
+    return
+  }
+  const timer = setTimeout(async () => {
+    try {
+      const query = encodeURIComponent(`${origen}, Argentina`)
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`)
+      const data = await res.json()
+      if (data[0]) {
+        setOrigenCoords({
+          latitud: parseFloat(data[0].lat),
+          longitud: parseFloat(data[0].lon)
+        })
+      }
+    } catch {
+      setOrigenCoords(null)
+    }
+  }, 800) // espera 800ms después de que el usuario deja de escribir
+  return () => clearTimeout(timer)
+}, [origen])
   const [fechaProgramada, setFechaProgramada] = useState(() => new Date().toISOString().slice(0, 10))
   const [seleccion, setSeleccion] = useState<Set<string>>(new Set())
   const [guardarPlantilla, setGuardarPlantilla] = useState(false)
@@ -201,7 +226,7 @@ export function RutaNuevaPage() {
             <h2 className="mb-1 text-sm font-semibold text-white">Vista previa del recorrido</h2>
             <p className="mb-2 text-xs text-gray-mid">Las ubicaciones se ajustan al optimizar la ruta.</p>
             <MapaRuta
-              origen={{ descripcion: origen }}
+              origen={{ descripcion: origen, latitud: origenCoords?.latitud, longitud: origenCoords?.longitud }}
               paradas={entregasSeleccionadas.map((entrega, index) => ({
                 orden: index + 1,
                 cliente: entrega.cliente_nombre ?? 'Cliente',
