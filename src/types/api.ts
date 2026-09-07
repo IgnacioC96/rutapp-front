@@ -278,15 +278,24 @@ export interface UbicacionChofer {
   actualizada_en: string
 }
 
+export interface SeguimientoParada {
+  orden: number
+  cliente: string
+  direccion: string
+  completada: boolean
+}
+
 export interface SeguimientoRuta {
   codigo: string
   ruta_nombre: string
   estado: EstadoRuta
   chofer_nombre: string
   progreso: number
-  proxima_parada?: Pick<Parada, 'cliente' | 'direccion' | 'orden'>
-  ubicacion?: UbicacionChofer
+  proxima_parada?: SeguimientoParada
   ultima_actualizacion?: string
+  // Coordenadas del chofer actualizadas cada 15 segundos
+  chofer_latitud?: number
+  chofer_longitud?: number
 }
 
 export interface Vehiculo {

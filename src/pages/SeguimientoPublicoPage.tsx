@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
@@ -117,7 +117,7 @@ export function SeguimientoPublicoPage() {
               {data.chofer_latitud && data.chofer_longitud ? (
                 <>
                   <p className="mt-1 mb-3 text-sm text-white">
-                    Chofer reportando ubicación · Actualizada {new Date(data.ultima_actualizacion).toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}
+                    Chofer reportando ubicación · Actualizada {data.ultima_actualizacion ? new Date(data.ultima_actualizacion).toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }) : ''}
                   </p>
                   {/* Mapa con pin del chofer */}
                   <div className="overflow-hidden rounded-lg border border-stroke">

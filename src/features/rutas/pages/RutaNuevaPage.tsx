@@ -12,7 +12,7 @@ import { useEntregas } from '@/features/entregas/api'
 import { useCreateRuta } from '../api'
 import { MapaRuta } from '../components/MapaRuta'
 import type { Ruta } from '@/types/api'
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
