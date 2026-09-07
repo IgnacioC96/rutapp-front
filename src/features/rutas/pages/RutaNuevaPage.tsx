@@ -12,8 +12,36 @@ import { useEntregas } from '@/features/entregas/api'
 import { useCreateRuta } from '../api'
 import { MapaRuta } from '../components/MapaRuta'
 import type { Ruta } from '@/types/api'
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
+import type { LatLngExpression } from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 const POR_PAGINA = 100
+
+/**
+ * Marcador arrastrable para ajustar manualmente la ubicación del origen.
+ * Llama a onDragEnd con las nuevas coordenadas cuando se suelta el pin.
+ */
+function DraggableMarker({
+  posicion,
+  onDragEnd,
+}: {
+  posicion: LatLngExpression
+  onDragEnd: (lat: number, lon: number) => void
+}) {
+  return (
+    <Marker
+      position={posicion}
+      draggable
+      eventHandlers={{
+        dragend: (e) => {
+          const { lat, lng } = e.target.getLatLng()
+          onDragEnd(lat, lng)
+        },
+      }}
+    />
+  )
+}
 
 export function RutaNuevaPage() {
   const navigate = useNavigate()
@@ -89,6 +117,8 @@ useEffect(() => {
         nombre: nombre.trim(),
         entregas_ids: Array.from(seleccion),
         origen_descripcion: origen.trim(),
+        origen_latitud: origenCoords?.latitud,
+        origen_longitud: origenCoords?.longitud,
         fecha_programada: fechaProgramada,
         guardar_plantilla: guardarPlantilla,
       },
@@ -144,6 +174,29 @@ useEffect(() => {
             error={errores.origen}
             onChange={(e) => setOrigen(e.target.value)}
           />
+          {/* Mapa con pin arrastrable para ajustar el origen con precisión */}
+          {origenCoords && (
+            <div className="mt-2 overflow-hidden rounded-card border border-stroke">
+              <p className="px-3 py-2 text-xs text-gray-mid">
+                Arrastrá el pin para ajustar la ubicación exacta del origen
+              </p>
+              <MapContainer
+                center={[origenCoords.latitud, origenCoords.longitud]}
+                zoom={15}
+                scrollWheelZoom={false}
+                className="h-48 w-full"
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <DraggableMarker
+                  posicion={[origenCoords.latitud, origenCoords.longitud]}
+                  onDragEnd={(lat, lon) => setOrigenCoords({ latitud: lat, longitud: lon })}
+                />
+              </MapContainer>
+            </div>
+          )}
           <Input
             name="fechaProgramada"
             label="Fecha programada"
