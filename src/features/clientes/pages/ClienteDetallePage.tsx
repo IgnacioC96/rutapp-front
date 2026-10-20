@@ -84,6 +84,14 @@ export function ClienteDetallePage() {
 
             <div className="grid grid-cols-2 gap-3">
               <Card>
+                <p className="text-xs text-gray-mid">WhatsApp</p>
+                <p className="text-sm text-white">{cliente.telefono_whatsapp}</p>
+              </Card>
+              <Card>
+                <p className="text-xs text-gray-mid">Email</p>
+                <p className="truncate text-sm text-white">{cliente.email ?? '—'}</p>
+              </Card>
+              <Card>
                 <p className="text-xs text-gray-mid">CUIT</p>
                 <p className="text-sm text-white">{cliente.cuit ?? '—'}</p>
               </Card>

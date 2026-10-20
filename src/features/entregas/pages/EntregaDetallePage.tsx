@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { Modal } from '@/components/ui/Modal'
@@ -19,14 +20,21 @@ export function EntregaDetallePage() {
   const cancelar = useCancelarEntrega()
   const completar = useCompletarEntrega()
   const [confirm, setConfirm] = useState<ConfirmAction>(null)
+  const [observacionesCierre, setObservacionesCierre] = useState('')
 
   const pending = cancelar.isPending || completar.isPending
   const actionError = cancelar.error ?? completar.error
 
   function ejecutar() {
     if (!id || !confirm) return
-    const mutation = confirm === 'cancelar' ? cancelar : completar
-    mutation.mutate(id, { onSuccess: () => setConfirm(null) })
+    if (confirm === 'cancelar') {
+      cancelar.mutate(id, { onSuccess: () => setConfirm(null) })
+      return
+    }
+    completar.mutate(
+      { id, observaciones_chofer: observacionesCierre.trim() || undefined },
+      { onSuccess: () => { setConfirm(null); setObservacionesCierre('') } },
+    )
   }
 
   return (
@@ -98,10 +106,30 @@ export function EntregaDetallePage() {
                 <p className="text-sm text-white">{entrega.fecha_estimada ?? '—'}</p>
               </Card>
               <Card>
+                <p className="text-xs text-gray-mid">Medidas (largo × ancho × alto)</p>
+                <p className="text-sm text-white">
+                  {entrega.largo_cm != null && entrega.ancho_cm != null && entrega.alto_cm != null
+                    ? `${entrega.largo_cm} × ${entrega.ancho_cm} × ${entrega.alto_cm} cm`
+                    : '—'}
+                </p>
+              </Card>
+              <Card>
                 <p className="text-xs text-gray-mid">ID</p>
                 <p className="truncate text-sm text-white">{entrega.id}</p>
               </Card>
             </div>
+
+            {entrega.codigo_confirmacion && (
+              <Card>
+                <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-mid">
+                  Código de confirmación
+                </h2>
+                <p className="font-mono text-lg font-bold tracking-widest text-white">{entrega.codigo_confirmacion}</p>
+                <p className="mt-1 text-xs text-gray-dark">
+                  Contenido del QR: QR-{entrega.codigo_confirmacion}. Es el código que el destinatario le muestra al chofer.
+                </p>
+              </Card>
+            )}
 
             {entrega.observaciones && (
               <Card>
@@ -115,7 +143,9 @@ export function EntregaDetallePage() {
             {/* Acciones según estado */}
             {(entrega.estado === 'pendiente' || entrega.estado === 'en_curso') && (
               <div className="flex flex-wrap gap-2 pt-2">
-                <Button onClick={() => setConfirm('completar')}>Marcar completada</Button>
+                {entrega.estado === 'en_curso' && (
+                  <Button onClick={() => setConfirm('completar')}>Cierre manual</Button>
+                )}
                 {entrega.estado === 'pendiente' && (
                   <Button variant="secondary" onClick={() => setConfirm('cancelar')}>
                     Cancelar entrega
@@ -128,13 +158,23 @@ export function EntregaDetallePage() {
           <Modal
             open={confirm !== null}
             onClose={() => setConfirm(null)}
-            title={confirm === 'cancelar' ? 'Cancelar entrega' : 'Completar entrega'}
+            title={confirm === 'cancelar' ? 'Cancelar entrega' : 'Cierre manual de la entrega'}
           >
             <p className="mb-4 text-sm text-gray-mid">
               {confirm === 'cancelar'
                 ? '¿Confirmás la cancelación de esta entrega? No se podrá revertir.'
-                : '¿Confirmás que esta entrega fue completada?'}
+                : 'Excepción operativa: se cierra sin validar el código. La confirmación normal la hace el chofer con el código desde su ruta. Solo aplica a entregas en curso.'}
             </p>
+            {confirm === 'completar' && (
+              <div className="mb-4">
+                <Input
+                  name="observaciones_cierre"
+                  label="Observaciones (opcional)"
+                  value={observacionesCierre}
+                  onChange={(e) => setObservacionesCierre(e.target.value)}
+                />
+              </div>
+            )}
             {actionError && (
               <p className="mb-3 rounded-card bg-error/10 px-3 py-2 text-sm text-error">
                 {getApiErrorMessage(actionError, 'No se pudo procesar')}

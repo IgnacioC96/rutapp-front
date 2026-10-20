@@ -10,6 +10,8 @@ interface EntregaFormProps {
   initial?: Entrega
   submitting?: boolean
   errorMessage?: string
+  /** Errores por campo de un 422 ({ campo: mensaje }). */
+  fieldErrors?: Record<string, string>
   onSubmit: (data: EntregaInput) => void
   onCancel: () => void
 }
@@ -18,6 +20,7 @@ export function EntregaForm({
   initial,
   submitting,
   errorMessage,
+  fieldErrors,
   onSubmit,
   onCancel,
 }: EntregaFormProps) {
@@ -32,6 +35,9 @@ export function EntregaForm({
   const [descripcion, setDescripcion] = useState(initial?.descripcion ?? '')
   const [bultos, setBultos] = useState(initial?.bultos?.toString() ?? '1')
   const [pesoKg, setPesoKg] = useState(initial?.peso_kg?.toString() ?? '')
+  const [largoCm, setLargoCm] = useState(initial?.largo_cm?.toString() ?? '')
+  const [anchoCm, setAnchoCm] = useState(initial?.ancho_cm?.toString() ?? '')
+  const [altoCm, setAltoCm] = useState(initial?.alto_cm?.toString() ?? '')
   const [fecha, setFecha] = useState(initial?.fecha_estimada ?? '')
   const [observaciones, setObservaciones] = useState(initial?.observaciones ?? '')
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -56,6 +62,9 @@ export function EntregaForm({
     if (!descripcion.trim()) next.descripcion = 'Describí el pedido'
     if (bultos && Number(bultos) < 1) next.bultos = 'Debe ser 1 o más'
     if (pesoKg && Number(pesoKg) < 0) next.peso = 'Peso inválido'
+    if (largoCm && Number(largoCm) <= 0) next.largo = 'Debe ser mayor a 0'
+    if (anchoCm && Number(anchoCm) <= 0) next.ancho = 'Debe ser mayor a 0'
+    if (altoCm && Number(altoCm) <= 0) next.alto = 'Debe ser mayor a 0'
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -69,6 +78,9 @@ export function EntregaForm({
       descripcion: descripcion.trim(),
       bultos: bultos ? Number(bultos) : undefined,
       peso_kg: pesoKg ? Number(pesoKg) : undefined,
+      largo_cm: largoCm ? Number(largoCm) : undefined,
+      ancho_cm: anchoCm ? Number(anchoCm) : undefined,
+      alto_cm: altoCm ? Number(altoCm) : undefined,
       fecha_estimada: fecha || undefined,
       observaciones: observaciones.trim() || undefined,
     })
@@ -136,7 +148,43 @@ export function EntregaForm({
           placeholder="Opcional"
           value={pesoKg}
           onChange={(e) => setPesoKg(e.target.value)}
-          error={errors.peso}
+          error={errors.peso ?? fieldErrors?.peso_kg}
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-3">
+        <Input
+          name="largo"
+          type="number"
+          min={0}
+          step="0.1"
+          label="Largo (cm)"
+          placeholder="Opcional"
+          value={largoCm}
+          onChange={(e) => setLargoCm(e.target.value)}
+          error={errors.largo ?? fieldErrors?.largo_cm}
+        />
+        <Input
+          name="ancho"
+          type="number"
+          min={0}
+          step="0.1"
+          label="Ancho (cm)"
+          placeholder="Opcional"
+          value={anchoCm}
+          onChange={(e) => setAnchoCm(e.target.value)}
+          error={errors.ancho ?? fieldErrors?.ancho_cm}
+        />
+        <Input
+          name="alto"
+          type="number"
+          min={0}
+          step="0.1"
+          label="Alto (cm)"
+          placeholder="Opcional"
+          value={altoCm}
+          onChange={(e) => setAltoCm(e.target.value)}
+          error={errors.alto ?? fieldErrors?.alto_cm}
         />
       </div>
 

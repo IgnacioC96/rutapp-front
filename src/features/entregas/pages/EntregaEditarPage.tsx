@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Spinner } from '@/components/ui/Spinner'
-import { getApiErrorMessage } from '@/lib/apiClient'
+import { getApiErrorMessage, getApiFieldErrors } from '@/lib/apiClient'
 import { EntregaForm } from '../components/EntregaForm'
 import { useEntrega, useUpdateEntrega } from '../api'
 
@@ -43,6 +43,7 @@ export function EntregaEditarPage() {
                 ? getApiErrorMessage(update.error, 'No se pudo guardar')
                 : undefined
             }
+            fieldErrors={update.isError ? getApiFieldErrors(update.error) : undefined}
             onCancel={() => navigate(`/admin/entregas/${id}`)}
             onSubmit={(data) =>
               update.mutate(data, {

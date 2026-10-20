@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
-import { getApiErrorMessage } from '@/lib/apiClient'
+import { getApiErrorMessage, getApiFieldErrors } from '@/lib/apiClient'
 import { ClienteForm } from '../components/ClienteForm'
 import { useCreateCliente } from '../api'
 
@@ -24,6 +24,7 @@ export function ClienteNuevoPage() {
           errorMessage={
             create.isError ? getApiErrorMessage(create.error, 'No se pudo crear') : undefined
           }
+          fieldErrors={create.isError ? getApiFieldErrors(create.error) : undefined}
           onCancel={() => navigate('/admin/clientes')}
           onSubmit={(data) =>
             create.mutate(data, {

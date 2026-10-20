@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
-import { getApiErrorMessage } from '@/lib/apiClient'
+import { getApiErrorMessage, getApiFieldErrors } from '@/lib/apiClient'
 import { EntregaForm } from '../components/EntregaForm'
 import { useCreateEntrega } from '../api'
 
@@ -24,6 +24,7 @@ export function EntregaNuevaPage() {
           errorMessage={
             create.isError ? getApiErrorMessage(create.error, 'No se pudo crear') : undefined
           }
+          fieldErrors={create.isError ? getApiFieldErrors(create.error) : undefined}
           onCancel={() => navigate('/admin/entregas')}
           onSubmit={(data) =>
             create.mutate(data, {

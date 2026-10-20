@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { Spinner } from '@/components/ui/Spinner'
-import { getApiErrorMessage } from '@/lib/apiClient'
+import { getApiErrorMessage, getApiFieldErrors } from '@/lib/apiClient'
 import { ClienteForm } from '../components/ClienteForm'
 import { useCliente, useUpdateCliente } from '../api'
 
@@ -43,6 +43,7 @@ export function ClienteEditarPage() {
                 ? getApiErrorMessage(update.error, 'No se pudo guardar')
                 : undefined
             }
+            fieldErrors={update.isError ? getApiFieldErrors(update.error) : undefined}
             onCancel={() => navigate(`/admin/clientes/${id}`)}
             onSubmit={(data) =>
               update.mutate(data, {
