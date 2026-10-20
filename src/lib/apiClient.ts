@@ -31,6 +31,8 @@ apiClient.interceptors.request.use((config) => {
 })
 
 // Response: maneja el 401 de forma global.
+// Solo el 401 es "sesión vencida/inválida". El 403 (p. ej. ruta ajena) es "sin permiso":
+// no se toca la sesión y el mensaje del backend llega al componente que lo muestra.
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {
@@ -45,10 +47,26 @@ apiClient.interceptors.response.use(
   },
 )
 
-/** Extrae el mensaje de error del formato estándar { detail: "..." }. */
+/**
+ * Extrae el mensaje de error del formato { error, mensaje, detalle? } del backend.
+ * `mensaje` ya viene en español y es apto para mostrar. Se acepta `detail` solo por el mock.
+ */
 export function getApiErrorMessage(error: unknown, fallback = 'Ocurrió un error'): string {
   if (axios.isAxiosError<ApiError>(error)) {
-    return error.response?.data?.detail ?? error.message ?? fallback
+    const data = error.response?.data
+    return data?.mensaje ?? data?.detail ?? error.message ?? fallback
   }
   return fallback
+}
+
+/** Código corto de error (`datos_invalidos`, `http_error`, ...) para lógica condicional. */
+export function getApiErrorCode(error: unknown): string | undefined {
+  return axios.isAxiosError<ApiError>(error) ? error.response?.data?.error : undefined
+}
+
+/** Errores por campo de un 422: { campo: mensaje }. Vacío si no es un 422 con `detalle`. */
+export function getApiFieldErrors(error: unknown): Record<string, string> {
+  if (!axios.isAxiosError<ApiError>(error)) return {}
+  const detalle = error.response?.data?.detalle ?? []
+  return Object.fromEntries(detalle.map((d) => [d.campo, d.mensaje]))
 }

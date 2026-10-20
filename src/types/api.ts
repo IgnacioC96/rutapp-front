@@ -5,8 +5,22 @@
 
 export type Rol = 'admin' | 'chofer'
 
+/** Detalle por campo de un 422 (validación de Pydantic). */
+export interface ApiErrorDetalle {
+  campo: string
+  mensaje: string
+  tipo?: string
+}
+
+/**
+ * Formato de error del backend: { error, mensaje, detalle? }.
+ * `detail` se mantiene solo por compatibilidad con el mock.
+ */
 export interface ApiError {
-  detail: string
+  error?: string
+  mensaje?: string
+  detalle?: ApiErrorDetalle[]
+  detail?: string
 }
 
 /* ---------- Auth ---------- */
@@ -70,7 +84,9 @@ export interface Direccion {
 export interface Cliente {
   id: string
   nombre: string
+  /** El backend lo normaliza y lo devuelve como +5491123456789. */
   telefono_whatsapp: string
+  email?: string | null
   direcciones: Direccion[]
   cuit?: string
   notas?: string
@@ -89,7 +105,9 @@ export interface ClientesListResponse {
 /** Body para POST /clientes y PUT /clientes/{id}. */
 export interface ClienteInput {
   nombre: string
+  /** Se envía tal cual lo escribe el usuario (formato argentino); lo normaliza el backend. */
   telefono_whatsapp: string
+  email?: string
   direcciones: Direccion[]
   cuit?: string
   notas?: string
@@ -116,9 +134,14 @@ export interface Entrega {
   descripcion: string
   bultos?: number
   peso_kg?: number
+  largo_cm?: number | null
+  ancho_cm?: number | null
+  alto_cm?: number | null
   fecha_estimada?: string
   observaciones?: string
   estado: EstadoEntrega
+  /** Solo lo devuelve el backend al admin; para el chofer viene siempre null. */
+  codigo_confirmacion?: string | null
 }
 
 /** Body para POST /entregas y PUT /entregas/{id}. */
@@ -128,6 +151,9 @@ export interface EntregaInput {
   descripcion: string
   bultos?: number
   peso_kg?: number
+  largo_cm?: number
+  ancho_cm?: number
+  alto_cm?: number
   fecha_estimada?: string
   observaciones?: string
 }
@@ -144,9 +170,20 @@ export interface EntregasListResponse {
 export interface EntregasQuery {
   estado?: EstadoEntrega
   cliente_id?: string
+  /** Fecha estimada exacta (YYYY-MM-DD). */
+  fecha_estimada?: string
+  /** Rango inclusivo (YYYY-MM-DD). Si desde > hasta el backend responde 400. */
   fecha_desde?: string
   fecha_hasta?: string
   search?: string
+  pagina?: number
+  por_pagina?: number
+}
+
+/** Query params de GET /entregas/pendientes-hoy. */
+export interface EntregasPendientesHoyQuery {
+  /** Suma las pendientes con fecha anterior a hoy (hora de Argentina). */
+  incluir_atrasadas?: boolean
   pagina?: number
   por_pagina?: number
 }
@@ -263,12 +300,9 @@ export interface RutasListResponse {
 
 /** Query params de GET /rutas. */
 export interface RutasQuery {
-  estado?: EstadoRuta
   chofer_id?: string
   solo_plantillas?: boolean
   fecha_programada?: string
-  pagina?: number
-  por_pagina?: number
 }
 
 /* ---------- Sprint 3: operación, tracking y flota ---------- */

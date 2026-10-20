@@ -11,12 +11,13 @@ interface ClienteFormProps {
   initial?: Cliente
   submitting?: boolean
   errorMessage?: string
+  /** Errores por campo de un 422 ({ campo: mensaje }). */
+  fieldErrors?: Record<string, string>
   onSubmit: (data: ClienteInput) => void
   onCancel: () => void
 }
 
 const MAX_DIRECCIONES = 3
-const WHATSAPP_REGEX = /^\+\d{10,15}$/
 const CABA: LatLngExpression = [-34.6037, -58.3816]
 const PIN_ICON = divIcon({ className: '', html: '<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:#f26522;border:3px solid white;transform:rotate(-45deg);box-shadow:0 1px 4px #000"></span>', iconSize: [22, 22], iconAnchor: [11, 22] })
 
@@ -86,11 +87,13 @@ export function ClienteForm({
   initial,
   submitting,
   errorMessage,
+  fieldErrors,
   onSubmit,
   onCancel,
 }: ClienteFormProps) {
   const [nombre, setNombre] = useState(initial?.nombre ?? '')
   const [telefono, setTelefono] = useState(initial?.telefono_whatsapp ?? '')
+  const [email, setEmail] = useState(initial?.email ?? '')
   const [cuit, setCuit] = useState(initial?.cuit ?? '')
   const [notas, setNotas] = useState(initial?.notas ?? '')
   const [direcciones, setDirecciones] = useState<Direccion[]>(
@@ -127,9 +130,8 @@ export function ClienteForm({
     if (!nombre.trim()) next.nombre = 'El nombre es obligatorio'
     if (!telefono.trim()) {
       next.telefono = 'El WhatsApp es obligatorio'
-    } else if (!WHATSAPP_REGEX.test(telefono.trim())) {
-      next.telefono = 'Formato internacional: +54911XXXXXXXX'
     }
+    // El formato del teléfono lo interpreta y normaliza el backend (422 con mensaje legible).
     direcciones.forEach((d, i) => {
       if (!d.descripcion.trim()) next[`dir-${i}`] = 'La dirección no puede estar vacía'
     })
@@ -143,6 +145,7 @@ export function ClienteForm({
     onSubmit({
       nombre: nombre.trim(),
       telefono_whatsapp: telefono.trim(),
+      email: email.trim() || undefined,
       cuit: cuit.trim() || undefined,
       notas: notas.trim() || undefined,
       direcciones: direcciones.map((d) => ({
@@ -161,15 +164,24 @@ export function ClienteForm({
         placeholder="Juan García"
         value={nombre}
         onChange={(e) => setNombre(e.target.value)}
-        error={errors.nombre}
+        error={errors.nombre ?? fieldErrors?.nombre}
       />
       <Input
         name="telefono"
         label="WhatsApp *"
-        placeholder="+5491155556666"
+        placeholder="11 2345-6789"
         value={telefono}
         onChange={(e) => setTelefono(e.target.value)}
-        error={errors.telefono}
+        error={errors.telefono ?? fieldErrors?.telefono_whatsapp}
+      />
+      <Input
+        name="email"
+        type="email"
+        label="Email (opcional)"
+        placeholder="cliente@ejemplo.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        error={fieldErrors?.email}
       />
       <Input
         name="cuit"

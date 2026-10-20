@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { AppShell } from '@/components/layout/AppShell'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
@@ -6,6 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Spinner } from '@/components/ui/Spinner'
 import { useUsuarios } from '@/features/usuarios/api'
+import { useEntregasPendientesHoy } from '@/features/entregas/api'
 import { useRutas } from '@/features/rutas/api'
 import { ESTADO_RUTA_META } from '@/features/rutas/estado'
 
@@ -18,7 +20,9 @@ function fechaLocalHoy() {
 export function DashboardAdmin() {
   const navigate = useNavigate()
   const hoy = fechaLocalHoy()
-  const { data: rutasData, isLoading } = useRutas({ fecha_programada: hoy, por_pagina: 100 })
+  const { data: rutasData, isLoading } = useRutas({ fecha_programada: hoy })
+  const [incluirAtrasadas, setIncluirAtrasadas] = useState(false)
+  const { data: pendientesHoy } = useEntregasPendientesHoy({ incluir_atrasadas: incluirAtrasadas, por_pagina: 10 })
   const { data: choferes } = useUsuarios({ rol: 'chofer' })
   const rutas = rutasData?.rutas ?? []
   const enCurso = rutas.filter((ruta) => ruta.estado === 'en_curso')
@@ -36,7 +40,8 @@ export function DashboardAdmin() {
     </div>
 
     {isLoading ? <div className="flex justify-center py-12"><Spinner size={28} /></div> : <>
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <Card><p className="text-xs text-gray-mid">Entregas pendientes hoy</p><p className="mt-1 text-2xl font-bold text-warning">{pendientesHoy?.total ?? 0}</p><p className="mt-1 text-xs text-gray-mid">{incluirAtrasadas ? 'con atrasadas' : 'para hoy'}</p></Card>
         <Card><p className="text-xs text-gray-mid">Rutas programadas</p><p className="mt-1 text-2xl font-bold text-white">{rutas.length}</p><p className="mt-1 text-xs text-gray-mid">para hoy</p></Card>
         <Card><p className="text-xs text-gray-mid">Rutas en curso</p><p className="mt-1 text-2xl font-bold text-brand">{enCurso.length}</p><p className="mt-1 text-xs text-gray-mid">en operación</p></Card>
         <Card><p className="text-xs text-gray-mid">Entregas completadas</p><p className="mt-1 text-2xl font-bold text-success">{completadas}/{paradas}</p><p className="mt-1 text-xs text-gray-mid">paradas de hoy</p></Card>
@@ -44,6 +49,11 @@ export function DashboardAdmin() {
       </div>
 
       {sinAsignar.length > 0 && <Card className="mb-5 border-warning/40 bg-warning/5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold text-warning">Hay {sinAsignar.length} ruta(s) sin chofer asignado</p><p className="text-xs text-gray-mid">Asignalas para que puedan comenzar su recorrido.</p></div><Button variant="secondary" onClick={() => navigate(`/admin/rutas/${sinAsignar[0].id}`)}>Asignar chofer</Button></div></Card>}
+
+      <section className="mb-6"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-semibold text-white">Entregas pendientes del día</h2><p className="text-xs text-gray-mid">Entregas sin ruta con fecha estimada de hoy (hora de Argentina).</p></div><label className="flex items-center gap-2 text-xs text-gray-mid"><input type="checkbox" className="accent-brand" checked={incluirAtrasadas} onChange={(e) => setIncluirAtrasadas(e.target.checked)} />Incluir atrasadas</label></div>
+        {pendientesHoy && pendientesHoy.entregas.length === 0 ? <EmptyState title="Sin entregas pendientes" description="No hay entregas pendientes para hoy." /> : <div className="space-y-2">{pendientesHoy?.entregas.map((entrega) => <Link key={entrega.id} to={`/admin/entregas/${entrega.id}`} className="flex items-center justify-between gap-3 rounded-card border border-stroke bg-card p-3 transition-colors hover:border-gray-dark"><div className="min-w-0"><p className="truncate text-sm font-semibold text-white">{entrega.cliente_nombre ?? 'Cliente'}</p><p className="truncate text-xs text-gray-mid">{entrega.descripcion}{entrega.fecha_estimada && ` · ${entrega.fecha_estimada}`}</p></div><span className="text-brand">→</span></Link>)}</div>}
+        {pendientesHoy && pendientesHoy.total > pendientesHoy.entregas.length && <Link className="mt-2 inline-block text-sm font-semibold text-brand hover:underline" to="/admin/entregas">Ver todas las entregas</Link>}
+      </section>
 
       <section><div className="mb-3 flex items-center justify-between"><div><h2 className="font-semibold text-white">Rutas de hoy</h2><p className="text-xs text-gray-mid">Estado operativo y avance de cada recorrido.</p></div><Link className="text-sm font-semibold text-brand hover:underline" to="/admin/rutas">Ver todas</Link></div>
         {rutas.length === 0 ? <EmptyState title="No hay rutas programadas para hoy" description="Planificá una ruta y seleccioná la fecha de operación para verla en este panel." action={<Button onClick={() => navigate('/admin/rutas/nueva')}>Planificar ruta</Button>} /> : <div className="space-y-2">{rutas.map((ruta) => { const hechas = ruta.paradas.filter((p) => p.completada).length; return <button key={ruta.id} onClick={() => navigate(`/admin/rutas/${ruta.id}`)} className="flex w-full items-center gap-3 rounded-card border border-stroke bg-card p-4 text-left transition-colors hover:border-gray-dark"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="truncate text-sm font-semibold text-white">{ruta.nombre}</p><Badge tone={ESTADO_RUTA_META[ruta.estado].tone}>{ESTADO_RUTA_META[ruta.estado].label}</Badge></div><p className="mt-1 text-xs text-gray-mid">{nombreChofer(ruta.chofer_id)} · {hechas}/{ruta.paradas.length} entregas completadas</p></div><div className="hidden w-28 sm:block"><div className="h-1.5 overflow-hidden rounded-full bg-surface"><div className="h-full bg-brand" style={{ width: `${ruta.paradas.length ? (hechas / ruta.paradas.length) * 100 : 0}%` }} /></div></div><span className="text-brand">→</span></button> })}</div>}

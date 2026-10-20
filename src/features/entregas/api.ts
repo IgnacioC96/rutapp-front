@@ -4,12 +4,14 @@ import type {
   Entrega,
   EntregaInput,
   EntregasListResponse,
+  EntregasPendientesHoyQuery,
   EntregasQuery,
 } from '@/types/api'
 
 const KEYS = {
   all: ['entregas'] as const,
   list: (query: EntregasQuery) => [...KEYS.all, 'list', query] as const,
+  pendientesHoy: (query: EntregasPendientesHoyQuery) => [...KEYS.all, 'pendientes-hoy', query] as const,
   detail: (id: string) => [...KEYS.all, 'detail', id] as const,
 }
 
@@ -17,6 +19,14 @@ const KEYS = {
 
 async function getEntregas(query: EntregasQuery): Promise<EntregasListResponse> {
   const { data } = await apiClient.get<EntregasListResponse>('/entregas', {
+    params: query,
+  })
+  return data
+}
+
+/** GET /entregas/pendientes-hoy — "hoy" lo calcula el backend con hora de Argentina. */
+async function getEntregasPendientesHoy(query: EntregasPendientesHoyQuery): Promise<EntregasListResponse> {
+  const { data } = await apiClient.get<EntregasListResponse>('/entregas/pendientes-hoy', {
     params: query,
   })
   return data
@@ -42,8 +52,12 @@ async function cancelarEntrega(id: string): Promise<Entrega> {
   return data
 }
 
-async function completarEntrega(id: string): Promise<Entrega> {
-  const { data } = await apiClient.patch<Entrega>(`/entregas/${id}/completar`)
+/** Cierre manual (solo admin, entrega en_curso). No pide código. */
+async function completarEntrega(args: string | { id: string; observaciones_chofer?: string }): Promise<Entrega> {
+  const { id, observaciones_chofer } = typeof args === 'string' ? { id: args, observaciones_chofer: undefined } : args
+  const { data } = await apiClient.patch<Entrega>(`/entregas/${id}/completar`, null, {
+    params: observaciones_chofer ? { observaciones_chofer } : undefined,
+  })
   return data
 }
 
@@ -53,6 +67,13 @@ export function useEntregas(query: EntregasQuery) {
   return useQuery({
     queryKey: KEYS.list(query),
     queryFn: () => getEntregas(query),
+  })
+}
+
+export function useEntregasPendientesHoy(query: EntregasPendientesHoyQuery = {}) {
+  return useQuery({
+    queryKey: KEYS.pendientesHoy(query),
+    queryFn: () => getEntregasPendientesHoy(query),
   })
 }
 

@@ -25,6 +25,7 @@ const entregas: Entrega[] = [
     peso_kg: 8.5,
     fecha_estimada: '2026-06-18',
     estado: 'pendiente',
+    codigo_confirmacion: '405CB16E',
   },
   {
     id: 'ent-002',
@@ -38,6 +39,7 @@ const entregas: Entrega[] = [
     fecha_estimada: '2026-06-17',
     observaciones: 'Entregar por portón trasero.',
     estado: 'en_curso',
+    codigo_confirmacion: '7A1D93BE',
   },
   {
     id: 'ent-003',
@@ -49,6 +51,7 @@ const entregas: Entrega[] = [
     bultos: 1,
     fecha_estimada: '2026-06-15',
     estado: 'completada',
+    codigo_confirmacion: 'C0FFEE42',
   },
 ]
 
@@ -77,6 +80,25 @@ export async function handleEntregas(
   url: string,
   method: string,
 ) {
+  // GET /entregas/pendientes-hoy (antes que /entregas/{id})
+  if (url.endsWith('/entregas/pendientes-hoy') && method === 'get') {
+    const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date())
+    const atrasadas = config.params?.incluir_atrasadas === true || config.params?.incluir_atrasadas === 'true'
+    const pagina = Number(config.params?.pagina ?? 1)
+    const porPagina = Number(config.params?.por_pagina ?? 50)
+    const filtradas = entregas
+      .filter((e) => e.estado === 'pendiente' && e.fecha_estimada && (atrasadas ? e.fecha_estimada <= hoy : e.fecha_estimada === hoy))
+      .sort((a, b) => (a.fecha_estimada ?? '').localeCompare(b.fecha_estimada ?? ''))
+    const inicio = (pagina - 1) * porPagina
+    const payload: EntregasListResponse = {
+      total: filtradas.length,
+      pagina,
+      por_pagina: porPagina,
+      entregas: filtradas.slice(inicio, inicio + porPagina),
+    }
+    return makeResponse(config, 200, payload)
+  }
+
   // PATCH /entregas/{id}/cancelar
   const cancelarMatch = url.match(/\/entregas\/([^/]+)\/cancelar$/)
   if (cancelarMatch && method === 'patch') {
@@ -100,9 +122,9 @@ export async function handleEntregas(
     if (!entrega) {
       return reject<ApiError>(config, 404, { detail: 'Entrega no encontrada' })
     }
-    if (entrega.estado === 'cancelada' || entrega.estado === 'completada') {
+    if (entrega.estado !== 'en_curso') {
       return reject<ApiError>(config, 400, {
-        detail: 'La entrega no puede completarse en su estado actual',
+        detail: 'La entrega no está en curso',
       })
     }
     entrega.estado = 'completada'
@@ -141,6 +163,7 @@ export async function handleEntregas(
       const clienteId = config.params?.cliente_id as string | undefined
       const fechaDesde = config.params?.fecha_desde as string | undefined
       const fechaHasta = config.params?.fecha_hasta as string | undefined
+      const fechaExacta = config.params?.fecha_estimada as string | undefined
       const search = (config.params?.search ?? '').toString().toLowerCase()
       const pagina = Number(config.params?.pagina ?? 1)
       const porPagina = Number(config.params?.por_pagina ?? 20)
@@ -148,6 +171,7 @@ export async function handleEntregas(
       let filtradas = entregas.slice()
       if (estado) filtradas = filtradas.filter((e) => e.estado === estado)
       if (clienteId) filtradas = filtradas.filter((e) => e.cliente_id === clienteId)
+      if (fechaExacta) filtradas = filtradas.filter((e) => e.fecha_estimada === fechaExacta)
       if (fechaDesde)
         filtradas = filtradas.filter((e) => (e.fecha_estimada ?? '') >= fechaDesde)
       if (fechaHasta)
@@ -180,6 +204,7 @@ export async function handleEntregas(
         ...denormalizar(body),
         bultos: body.bultos ?? 1,
         estado: 'pendiente',
+        codigo_confirmacion: uid('c').slice(2, 10).toUpperCase(),
       }
       entregas.unshift(nueva)
       return makeResponse(config, 201, nueva)

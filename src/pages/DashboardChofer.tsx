@@ -48,11 +48,10 @@ function QrConfirmation({ ruta, parada, onClose }: { ruta: Ruta; parada: Parada;
     confirmar.mutate({ entregaId: parada.entrega_id, codigo: codigo.trim() }, { onSuccess: onClose, onError: (err) => setError(getApiErrorMessage(err, 'No se pudo validar el código')) })
   }
   return <Modal open onClose={onClose} title="Confirmar entrega con QR">
-    <p className="mb-4 text-sm text-gray-mid">Escaneá el código de la entrega o ingresalo manualmente si la cámara no está disponible.</p>
-    <Input autoFocus name="codigoQr" label="Código QR" placeholder="QR-entrega-id" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
+    <p className="mb-4 text-sm text-gray-mid">Escaneá el QR de la entrega o ingresá el código de 8 caracteres si la cámara no está disponible.</p>
+    <Input autoFocus name="codigoQr" label="Código de confirmación" placeholder="Ej: 405CB16E" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
     {!camaraActiva && <button type="button" onClick={() => void abrirCamara()} className="mt-3 text-sm font-semibold text-brand hover:underline">Abrir lector con cámara</button>}
     {camaraActiva && <video ref={video} muted playsInline className="mt-3 aspect-video w-full rounded-card bg-black object-cover" />}
-    {parada.entrega_id && <p className="mt-2 text-xs text-gray-dark">Demo: QR-{parada.entrega_id}</p>}
     {error && <p className="mt-3 text-sm text-error">{error}</p>}
     <div className="mt-5 flex justify-end gap-2"><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button onClick={confirmarQr} loading={confirmar.isPending} disabled={!codigo.trim()}>Validar QR</Button></div>
   </Modal>
@@ -101,7 +100,7 @@ function ConfirmarFinalizacionModal({
 
 export function DashboardChofer() {
   const user = useAuthStore((s) => s.user)
-  const { data, isLoading, isError, error } = useRutas({ chofer_id: user?.id, por_pagina: 20 })
+  const { data, isLoading, isError, error } = useRutas({ chofer_id: user?.id })
   const [qrParada, setQrParada] = useState<{ ruta: Ruta; parada: Parada } | null>(null)
   const [rutaFinalizar, setRutaFinalizar] = useState<{ ruta: Ruta; pendientes: number } | null>(null)
   const [finalizarError, setFinalizarError] = useState<string | null>(null)

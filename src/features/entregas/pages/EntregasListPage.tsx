@@ -22,6 +22,7 @@ export function EntregasListPage() {
   const [search, setSearch] = useState('')
   const [estado, setEstado] = useState<EstadoEntrega | ''>('')
   const [clienteId, setClienteId] = useState('')
+  const [fechaExacta, setFechaExacta] = useState('')
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
   const [pagina, setPagina] = useState(1)
@@ -30,12 +31,16 @@ export function EntregasListPage() {
   const { data: clientesData } = useClientes({ por_pagina: 100 })
   const clientes = clientesData?.clientes ?? []
 
+  const rangoInvalido = Boolean(fechaDesde && fechaHasta && fechaDesde > fechaHasta)
+
   const { data, isLoading, isError, error, isFetching } = useEntregas({
     search: debouncedSearch || undefined,
     estado: estado || undefined,
     cliente_id: clienteId || undefined,
-    fecha_desde: fechaDesde || undefined,
-    fecha_hasta: fechaHasta || undefined,
+    fecha_estimada: fechaExacta || undefined,
+    // Si desde > hasta el backend responde 400: no se envía el rango inválido.
+    fecha_desde: rangoInvalido ? undefined : fechaDesde || undefined,
+    fecha_hasta: rangoInvalido ? undefined : fechaHasta || undefined,
     pagina,
     por_pagina: POR_PAGINA,
   })
@@ -88,6 +93,14 @@ export function EntregasListPage() {
             options={clientes.map((c) => ({ value: c.id, label: c.nombre }))}
           />
           <Input
+            name="fecha_estimada"
+            type="date"
+            label="Fecha estimada exacta"
+            value={fechaExacta}
+            onChange={(e) => resetPagina(setFechaExacta)(e.target.value)}
+          />
+          <span className="hidden sm:block" />
+          <Input
             name="fecha_desde"
             type="date"
             label="Desde"
@@ -102,6 +115,9 @@ export function EntregasListPage() {
             onChange={(e) => resetPagina(setFechaHasta)(e.target.value)}
           />
         </div>
+        {rangoInvalido && (
+          <p className="text-sm text-error">La fecha "Desde" no puede ser posterior a "Hasta".</p>
+        )}
       </div>
 
       {isLoading && (

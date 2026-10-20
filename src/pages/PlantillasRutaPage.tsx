@@ -7,7 +7,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { useRutas } from '@/features/rutas/api'
 
 export function PlantillasRutaPage() {
-  const navigate = useNavigate(); const { data, isLoading } = useRutas({ solo_plantillas: true, por_pagina: 100 })
+  const navigate = useNavigate(); const { data, isLoading } = useRutas({ solo_plantillas: true })
   return <AppShell><div className="mb-5 flex items-center justify-between"><div><h1 className="text-lg font-bold text-white">Plantillas de ruta</h1><p className="text-sm text-gray-mid">Recorridos guardados para reutilizar.</p></div><Button onClick={() => navigate('/admin/rutas/nueva')}>+ Crear plantilla</Button></div>
     {isLoading && <div className="flex justify-center py-12"><Spinner size={28} /></div>}
     {data?.rutas.length === 0 && <EmptyState title="Sin plantillas guardadas" description="Al crear una ruta, activá “Guardar como plantilla”." action={<Button onClick={() => navigate('/admin/rutas/nueva')}>Crear plantilla</Button>} />}

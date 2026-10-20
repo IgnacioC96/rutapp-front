@@ -65,7 +65,12 @@ export async function handleRutas(
     const body = parseBody<{ codigo?: string }>(config)
     if (!ruta || !parada) return reject<ApiError>(config, 404, { detail: 'Entrega no encontrada en la ruta' })
     if (ruta.estado !== 'en_curso') return reject<ApiError>(config, 400, { detail: 'Iniciá la ruta antes de confirmar entregas' })
-    if (body.codigo !== `QR-${parada.entrega_id}`) return reject<ApiError>(config, 400, { detail: 'El código QR no corresponde a esta entrega' })
+    const entregaConfirmar = parada.entrega_id ? findEntregaMock(parada.entrega_id) : undefined
+    // Igual que el backend: sin distinguir mayúsculas/minúsculas y con o sin prefijo "QR-".
+    const codigoIngresado = (body.codigo ?? '').trim().toUpperCase().replace(/^QR-/, '')
+    if (!entregaConfirmar?.codigo_confirmacion || codigoIngresado !== entregaConfirmar.codigo_confirmacion.toUpperCase()) {
+      return reject<ApiError>(config, 400, { detail: 'Código incorrecto' })
+    }
     parada.completada = true
     const entrega = parada.entrega_id ? findEntregaMock(parada.entrega_id) : undefined
     if (entrega) entrega.estado = 'completada'
