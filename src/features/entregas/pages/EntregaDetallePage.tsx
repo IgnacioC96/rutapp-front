@@ -113,10 +113,6 @@ export function EntregaDetallePage() {
                     : '—'}
                 </p>
               </Card>
-              <Card>
-                <p className="text-xs text-gray-mid">ID</p>
-                <p className="truncate text-sm text-white">{entrega.id}</p>
-              </Card>
             </div>
 
             {entrega.codigo_confirmacion && (
