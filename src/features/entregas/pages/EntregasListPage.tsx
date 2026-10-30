@@ -70,7 +70,7 @@ export function EntregasListPage() {
       <div className="mb-4 flex flex-col gap-3">
         <Input
           name="search"
-          placeholder="Buscar por cliente, descripción o #ID…"
+          placeholder="Buscar por cliente o descripción…"
           value={search}
           onChange={(e) => resetPagina(setSearch)(e.target.value)}
         />
@@ -152,6 +152,9 @@ export function EntregasListPage() {
                         {entrega.cliente_nombre ?? 'Cliente'}
                       </p>
                       <p className="truncate text-sm text-gray-mid">{entrega.descripcion}</p>
+                      {entrega.cliente_telefono && (
+                        <p className="truncate text-xs text-gray-mid">Tel: {entrega.cliente_telefono}</p>
+                      )}
                       <p className="mt-0.5 truncate text-xs text-gray-dark">
                         {entrega.direccion_descripcion ?? '—'}
                         {entrega.fecha_estimada && ` · ${entrega.fecha_estimada}`}

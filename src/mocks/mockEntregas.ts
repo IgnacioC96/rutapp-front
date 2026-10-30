@@ -56,17 +56,20 @@ const entregas: Entrega[] = [
 ]
 
 /** Completa los campos denormalizados a partir del cliente referenciado. */
-function denormalizar(input: EntregaInput): Pick<Entrega, 'cliente_nombre' | 'direccion_descripcion'> {
+function denormalizar(input: EntregaInput): Pick<Entrega, 'cliente_nombre' | 'cliente_telefono' | 'direccion_descripcion'> {
   const cliente = findClienteMock(input.cliente_id)
   const direccion = cliente?.direcciones.find((d) => d.id === input.direccion_id)
   return {
     cliente_nombre: cliente?.nombre,
+    cliente_telefono: cliente?.telefono_whatsapp,
     direccion_descripcion: direccion?.descripcion,
   }
 }
 
 /** Devuelve true si la URL corresponde a este handler. */
 export function matchesEntregas(url: string): boolean {
+  // Las URLs /rutas/.../entregas/.../confirmar (y no-entregada) pertenecen al mock de rutas.
+  if (/^\/?rutas(\/|$)/.test(url.replace(/^https?:\/\/[^/]+/, '').replace(/^\/api\/v1/, ''))) return false
   return url.includes('/entregas')
 }
 
