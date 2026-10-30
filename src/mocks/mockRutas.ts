@@ -1,6 +1,7 @@
 import type { InternalAxiosRequestConfig } from 'axios'
 import type {
   ApiError,
+  NoEntregadaInput,
   ParadaExtraInput,
   Parada,
   Ruta,
@@ -38,18 +39,32 @@ export function getSeguimientoMock(codigo: string): SeguimientoRuta | undefined 
   const ruta = rutas.find((r) => `RUT-${r.id}` === codigo)
   if (!ruta) return undefined
   const chofer = mockUsers.find((u) => u.id === ruta.chofer_id)
-  const completadas = ruta.paradas.filter((p) => p.completada).length
-  const proxima = ruta.paradas.find((p) => !p.completada)
+  const completadas = ruta.paradas.filter((p) => p.completada || p.omitida).length
+  const proxima = ruta.paradas.find((p) => !p.completada && !p.omitida)
+  const ubicacion = ubicaciones.get(ruta.id)
   return {
     codigo,
     ruta_nombre: ruta.nombre,
     estado: ruta.estado,
     chofer_nombre: chofer?.nombre ?? 'Chofer asignado',
     progreso: ruta.paradas.length ? Math.round((completadas / ruta.paradas.length) * 100) : 0,
-    proxima_parada: proxima ? { cliente: proxima.cliente, direccion: proxima.direccion, orden: proxima.orden } : undefined,
-    ubicacion: ubicaciones.get(ruta.id),
-    ultima_actualizacion: ubicaciones.get(ruta.id)?.actualizada_en,
+    // Igual que el back: sin datos del cliente, solo "Parada N de M".
+    proxima_parada: proxima
+      ? { cliente: `Parada ${proxima.orden} de ${ruta.paradas.length}`, direccion: '', orden: proxima.orden, completada: false }
+      : undefined,
+    chofer_latitud: ubicacion?.latitud ?? ruta.origen_latitud,
+    chofer_longitud: ubicacion?.longitud ?? ruta.origen_longitud,
+    ultima_actualizacion: ubicacion?.actualizada_en,
   }
+}
+
+/** Cierra la ruta si no quedan paradas de entrega sin resolver (completada u omitida). */
+function cerrarSiTermino(ruta: Ruta) {
+  const sinResolver = ruta.paradas.some((p) => !p.es_parada_extra && !p.completada && !p.omitida)
+  if (sinResolver) return
+  const hubo = ruta.paradas.some((p) => p.omitida && !p.es_parada_extra)
+  ruta.estado = hubo ? 'finalizada' : 'completada'
+  ruta.finalizada_en = new Date().toISOString()
 }
 
 export async function handleRutas(
@@ -57,6 +72,39 @@ export async function handleRutas(
   url: string,
   method: string,
 ) {
+  // PATCH /rutas/{id}/entregas/{entregaId}/no-entregada
+  const noEntregadaMatch = url.match(/\/rutas\/([^/]+)\/entregas\/([^/]+)\/no-entregada$/)
+  if (noEntregadaMatch && method === 'patch') {
+    const ruta = rutas.find((r) => r.id === noEntregadaMatch[1])
+    const parada = ruta?.paradas.find((p) => p.entrega_id === noEntregadaMatch[2])
+    const body = parseBody<NoEntregadaInput>(config)
+    if (!ruta || !parada) return reject<ApiError>(config, 404, { mensaje: 'Entrega no encontrada en esta ruta' })
+    if (ruta.estado !== 'en_curso') return reject<ApiError>(config, 400, { mensaje: 'Solo se puede marcar una entrega como no entregada en rutas en curso' })
+    if (parada.completada) return reject<ApiError>(config, 400, { mensaje: 'Esta entrega ya fue confirmada' })
+    if (parada.omitida) return reject<ApiError>(config, 400, { mensaje: 'Esta entrega ya fue marcada como no entregada' })
+    parada.omitida = true
+    parada.motivo_omision = body.motivo ?? 'nadie_recibio'
+    if (body.nota?.trim()) parada.nota_chofer = body.nota.trim()
+    const entrega = parada.entrega_id ? findEntregaMock(parada.entrega_id) : undefined
+    if (entrega) entrega.estado = 'pendiente'
+    cerrarSiTermino(ruta)
+    return makeResponse(config, 200, ruta)
+  }
+
+  // PATCH /rutas/{id}/paradas/{paradaId}/nota
+  const notaMatch = url.match(/\/rutas\/([^/]+)\/paradas\/([^/]+)\/nota$/)
+  if (notaMatch && method === 'patch') {
+    const ruta = rutas.find((r) => r.id === notaMatch[1])
+    const parada = ruta?.paradas.find((p) => getParadaMockId(p) === notaMatch[2])
+    const body = parseBody<{ nota?: string | null }>(config)
+    if (!ruta || !parada) return reject<ApiError>(config, 404, { mensaje: 'Parada no encontrada en esta ruta' })
+    if (ruta.estado !== 'en_curso') return reject<ApiError>(config, 400, { mensaje: 'Solo se pueden dejar notas en rutas en curso' })
+    const nota = body.nota?.trim() ?? ''
+    if (nota.length > 1000) return reject<ApiError>(config, 422, { mensaje: 'La nota no puede superar los 1000 caracteres' })
+    parada.nota_chofer = nota || null
+    return makeResponse(config, 200, ruta)
+  }
+
   // PATCH /rutas/{id}/entregas/{entregaId}/confirmar
   const confirmarMatch = url.match(/\/rutas\/([^/]+)\/entregas\/([^/]+)\/confirmar$/)
   if (confirmarMatch && method === 'patch') {
@@ -65,6 +113,7 @@ export async function handleRutas(
     const body = parseBody<{ codigo?: string }>(config)
     if (!ruta || !parada) return reject<ApiError>(config, 404, { detail: 'Entrega no encontrada en la ruta' })
     if (ruta.estado !== 'en_curso') return reject<ApiError>(config, 400, { detail: 'Iniciá la ruta antes de confirmar entregas' })
+    if (parada.omitida) return reject<ApiError>(config, 409, { mensaje: 'Esta entrega fue marcada como no entregada. Volvé a planificarla en otra ruta' })
     const entregaConfirmar = parada.entrega_id ? findEntregaMock(parada.entrega_id) : undefined
     // Igual que el backend: sin distinguir mayúsculas/minúsculas y con o sin prefijo "QR-".
     const codigoIngresado = (body.codigo ?? '').trim().toUpperCase().replace(/^QR-/, '')
@@ -74,6 +123,7 @@ export async function handleRutas(
     parada.completada = true
     const entrega = parada.entrega_id ? findEntregaMock(parada.entrega_id) : undefined
     if (entrega) entrega.estado = 'completada'
+    cerrarSiTermino(ruta)
     return makeResponse(config, 200, ruta)
   }
 
@@ -97,7 +147,7 @@ export async function handleRutas(
       ruta.estado = 'en_curso'; ruta.iniciada_en = new Date().toISOString()
     } else {
       if (ruta.estado !== 'en_curso') return reject<ApiError>(config, 400, { detail: 'La ruta no está en curso' })
-      const pendientes = ruta.paradas.filter((p) => !p.es_parada_extra && !p.completada)
+      const pendientes = ruta.paradas.filter((p) => !p.es_parada_extra && !p.completada && !p.omitida)
       if (pendientes.length > 0) {
         pendientes.forEach((p) => {
           const entrega = p.entrega_id ? findEntregaMock(p.entrega_id) : undefined
@@ -105,7 +155,7 @@ export async function handleRutas(
         })
         ruta.estado = 'finalizada'
       } else {
-        ruta.estado = 'completada'
+        ruta.estado = ruta.paradas.some((p) => p.omitida && !p.es_parada_extra) ? 'finalizada' : 'completada'
       }
       ruta.finalizada_en = new Date().toISOString()
     }

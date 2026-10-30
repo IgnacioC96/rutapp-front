@@ -104,7 +104,6 @@ export function SeguimientoPublicoPage() {
                 <>
                   <p className="mt-4 text-xs text-gray-mid">Próxima parada</p>
                   <p className="text-sm text-white">{data.proxima_parada.cliente}</p>
-                  <p className="text-xs text-gray-mid">{data.proxima_parada.direccion}</p>
                 </>
               ) : (
                 <p className="mt-4 text-sm text-success">La ruta completó todas sus paradas.</p>

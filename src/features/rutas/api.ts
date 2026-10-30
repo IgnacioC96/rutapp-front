@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/apiClient'
 import type {
+  NoEntregadaInput,
+  NotaParadaInput,
   ParadaExtraInput,
   Ruta,
   RutaAsignarInput,
@@ -72,6 +74,18 @@ async function confirmarEntrega(id: string, entregaId: string, codigo: string): 
   return data
 }
 
+/** PATCH .../no-entregada — la parada queda omitida; la ruta puede cerrarse sola. */
+async function marcarNoEntregada(id: string, entregaId: string, payload: NoEntregadaInput): Promise<Ruta> {
+  const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/entregas/${entregaId}/no-entregada`, payload)
+  return data
+}
+
+/** PATCH .../paradas/{parada_id}/nota — null o vacío borra la nota. */
+async function guardarNotaParada(id: string, paradaId: string, payload: NotaParadaInput): Promise<Ruta> {
+  const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/paradas/${paradaId}/nota`, payload)
+  return data
+}
+
 async function actualizarUbicacion(id: string, ubicacion: Pick<UbicacionChofer, 'latitud' | 'longitud'>): Promise<Ruta> {
   const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/ubicacion`, ubicacion)
   return data
@@ -108,6 +122,8 @@ export function useCreateRuta() {
       // Las entregas pasan a "en_curso" al crear la ruta.
       qc.invalidateQueries({ queryKey: ['entregas'] })
     },
+    // 409: otro admin tomó una de las entregas mientras se planificaba. Se refresca la lista de pendientes.
+    onError: () => qc.invalidateQueries({ queryKey: ['entregas'] }),
   })
 }
 
@@ -159,6 +175,22 @@ export function useConfirmarEntregaQr(id: string) {
   return useMutation({
     mutationFn: ({ entregaId, codigo }: { entregaId: string; codigo: string }) => confirmarEntrega(id, entregaId, codigo),
     onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); qc.invalidateQueries({ queryKey: ['entregas'] }) },
+  })
+}
+
+export function useMarcarNoEntregada(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ entregaId, ...payload }: NoEntregadaInput & { entregaId: string }) => marcarNoEntregada(id, entregaId, payload),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: KEYS.all }); qc.invalidateQueries({ queryKey: ['entregas'] }) },
+  })
+}
+
+export function useGuardarNotaParada(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ paradaId, nota }: { paradaId: string; nota: string | null }) => guardarNotaParada(id, paradaId, { nota }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })
 }
 

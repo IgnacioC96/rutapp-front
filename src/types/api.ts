@@ -128,6 +128,8 @@ export interface Entrega {
   cliente_id: string
   /** Denormalizado para listados/detalle. */
   cliente_nombre?: string
+  /** Teléfono (WhatsApp) del cliente, denormalizado. */
+  cliente_telefono?: string
   direccion_id: string
   /** Denormalizado para listados/detalle. */
   direccion_descripcion?: string
@@ -239,6 +241,31 @@ export interface Parada {
   es_parada_extra?: boolean
   descripcion_extra?: string | null
   direccion_extra?: string | null
+  /** Teléfono (WhatsApp) del cliente; lo ven el admin y el chofer asignado. */
+  cliente_telefono?: string | null
+  /** Nota que escribe el chofer. La ve el admin; el cliente nunca. */
+  nota_chofer?: string | null
+  /** true si el chofer la marcó como "no entregada". */
+  omitida?: boolean
+  motivo_omision?: MotivoNoEntrega | null
+}
+
+export type MotivoNoEntrega =
+  | 'nadie_recibio'
+  | 'cliente_ausente'
+  | 'direccion_incorrecta'
+  | 'rechazada'
+  | 'otro'
+
+/** Body de PATCH /rutas/{id}/entregas/{entrega_id}/no-entregada. */
+export interface NoEntregadaInput {
+  motivo: MotivoNoEntrega
+  nota?: string
+}
+
+/** Body de PATCH /rutas/{id}/paradas/{parada_id}/nota (null o vacío la borra, máx. 1000). */
+export interface NotaParadaInput {
+  nota: string | null
 }
 
 export interface Ruta {
@@ -248,6 +275,8 @@ export interface Ruta {
   total_km?: number
   tiempo_estimado_min?: number
   es_plantilla: boolean
+  /** Código del enlace público de seguimiento. */
+  codigo_seguimiento?: string | null
   /** Día operativo para el que se planificó la ruta (YYYY-MM-DD). */
   fecha_programada?: string
   origen_descripcion?: string
@@ -314,8 +343,10 @@ export interface UbicacionChofer {
 
 export interface SeguimientoParada {
   orden: number
+  /** Ahora viene como "Parada 3 de 8": ya no se exponen datos del cliente. */
   cliente: string
-  direccion: string
+  /** Viene vacía; no mostrarla. */
+  direccion?: string
   completada: boolean
 }
 

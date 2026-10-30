@@ -15,7 +15,15 @@ import { ESTADO_RUTA_META } from '../estado'
 import { MapaRuta } from '../components/MapaRuta'
 import { getParadaDireccion, getParadaId, getParadaKey, getParadaTitulo } from '../paradas'
 import { formatearTiempo } from '@/lib/formatearTiempo'
-import type { Parada, ParadaExtraInput, Ruta } from '@/types/api'
+import type { MotivoNoEntrega, Parada, ParadaExtraInput, Ruta } from '@/types/api'
+
+const MOTIVO_LABEL: Record<MotivoNoEntrega, string> = {
+  nadie_recibio: 'nadie recibió',
+  cliente_ausente: 'cliente ausente',
+  direccion_incorrecta: 'dirección incorrecta',
+  rechazada: 'rechazada',
+  otro: 'otro motivo',
+}
 
 function ParadaExtraModal({ ruta, onClose }: { ruta: Ruta; onClose: () => void }) {
   const agregar = useAgregarParadaExtra(ruta.id)
@@ -305,15 +313,18 @@ export function RutaDetallePage() {
             {paradasOrdenadas.map((parada, index) => (
               <Card key={getParadaKey(parada, index)} className={`flex gap-3 transition-opacity ${arrastrando === index ? 'opacity-50' : ''}`} draggable={puedeReordenar} onDragStart={() => puedeReordenar && setArrastrando(index)} onDragOver={(event) => { if (puedeReordenar) event.preventDefault() }} onDrop={() => { if (puedeReordenar && arrastrando != null) reordenarParadas(arrastrando, index); setArrastrando(null) }} onDragEnd={() => setArrastrando(null)}>
                 {puedeReordenar && <span className="cursor-grab pt-1 text-gray-dark" aria-label="Arrastrar parada">⋮⋮</span>}
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-bold text-white">
-                  {parada.orden}
+                <span className={`flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${parada.completada ? 'bg-success' : parada.omitida ? 'bg-error' : 'bg-brand'}`}>
+                  {parada.completada ? '✓' : parada.omitida ? '✕' : parada.orden}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate text-sm font-semibold text-white">{getParadaTitulo(parada)}</p>
                     {parada.es_parada_extra && <Badge tone="brand">Operativa</Badge>}
+                    {parada.omitida && <Badge tone="error">No entregada{parada.motivo_omision ? `: ${MOTIVO_LABEL[parada.motivo_omision]}` : ''}</Badge>}
                   </div>
                   <p className="truncate text-xs text-gray-mid">{getParadaDireccion(parada)}</p>
+                  {parada.cliente_telefono && <p className="text-xs text-gray-mid">Tel: {parada.cliente_telefono}</p>}
+                  {parada.nota_chofer && <p className="mt-2 rounded-card bg-surface px-3 py-2 text-xs text-white"><span className="text-gray-mid">Nota del chofer: </span>{parada.nota_chofer}</p>}
                   {(parada.distancia_desde_anterior_km != null ||
                     parada.tiempo_desde_anterior_min != null) && (
                     <p className="mt-1 text-xs text-gray-dark">
