@@ -23,8 +23,8 @@ const KEYS = {
 /* ---------- Llamadas HTTP ---------- */
 
 /**
- * GET /rutas no pagina ni filtra por estado: devuelve todas las que matchean
- * chofer_id / solo_plantillas / fecha_programada. Se acepta tanto un array plano
+ * GET /rutas no pagina: devuelve todas las que matchean chofer_id / solo_plantillas /
+ * fecha_programada / estado / fecha_desde / fecha_hasta. Se acepta tanto un array plano
  * como el envoltorio { rutas } y se normaliza a RutasListResponse.
  */
 async function getRutas(query: RutasQuery): Promise<RutasListResponse> {

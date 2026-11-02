@@ -11,7 +11,7 @@ import { ESTADO_RUTA_META } from '@/features/rutas/estado'
 import 'leaflet/dist/leaflet.css'
 
 // Fix para el icono de Leaflet en Vite
-delete (L.Icon.Default.prototype as any)._getIconUrl
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -35,7 +35,7 @@ function ActualizarVista({ lat, lon }: { lat: number; lon: number }) {
   const map = useMap()
   useEffect(() => {
     map.setView([lat, lon], map.getZoom())
-  }, [lat, lon])
+  }, [map, lat, lon])
   return null
 }
 

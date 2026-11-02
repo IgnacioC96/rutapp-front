@@ -70,24 +70,23 @@ export function MapaRuta({
     }
   })
 
-  // Estado para la polyline de la ruta real por calles
-  const [rutaReal, setRutaReal] = useState<LatLngExpression[]>([])
   const recorridoRecto = [puntoOrigen, ...puntos.map((p) => p.posicion)]
+  // Solo se busca la ruta real por calles si todas las paradas tienen coordenadas reales.
+  const todasTienenCoords = puntos.length > 0 && puntos.every((p) => p.latitud != null && p.longitud != null)
+  // Clave estable del recorrido: evita recalcular en cada render.
+  const clave = todasTienenCoords ? JSON.stringify(recorridoRecto) : ''
+  const [rutaReal, setRutaReal] = useState<{ clave: string; puntos: LatLngExpression[] } | null>(null)
 
   useEffect(() => {
-    // Solo buscar ruta real si todas las paradas tienen coordenadas reales
-    const todasTienenCoords = puntos.every(
-      (p) => p.latitud != null && p.longitud != null
-    )
-    if (!todasTienenCoords || puntos.length === 0) {
-      setRutaReal(recorridoRecto)
-      return
-    }
+    if (!clave) return
+    let cancelado = false
+    obtenerRutaReal(JSON.parse(clave) as LatLngExpression[]).then((resultado) => {
+      if (!cancelado) setRutaReal({ clave, puntos: resultado })
+    })
+    return () => { cancelado = true }
+  }, [clave])
 
-    obtenerRutaReal(recorridoRecto).then(setRutaReal)
-  }, [paradas, origen])
-
-  const polyline = rutaReal.length > 0 ? rutaReal : recorridoRecto
+  const polyline = rutaReal && rutaReal.clave === clave && rutaReal.puntos.length > 0 ? rutaReal.puntos : recorridoRecto
 
   return (
     <div className={`overflow-hidden rounded-card border border-stroke ${className}`}>

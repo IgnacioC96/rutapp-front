@@ -56,14 +56,13 @@ export function RutaNuevaPage() {
 
   const [nombre, setNombre] = useState(plantilla?.nombre ?? '')
   const [origen, setOrigen] = useState(plantilla?.origen_descripcion ?? '')
-const [origenCoords, setOrigenCoords] = useState<{ latitud: number; longitud: number } | null>(null)
+const [coordsGeocodificadas, setOrigenCoords] = useState<{ latitud: number; longitud: number } | null>(null)
+// Con menos de 8 caracteres no hay origen válido: se deriva en el render, sin setState en el efecto.
+const origenCoords = origen && origen.length >= 8 ? coordsGeocodificadas : null
 
 // Geocodifica el origen con Nominatim cuando el usuario deja de escribir
 useEffect(() => {
-  if (!origen || origen.length < 8) {
-    setOrigenCoords(null)
-    return
-  }
+  if (!origen || origen.length < 8) return
   const timer = setTimeout(async () => {
     try {
       const query = encodeURIComponent(`${origen}, Argentina`)
