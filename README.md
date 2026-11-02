@@ -84,7 +84,7 @@ creado**: podés loguearte directamente con los usuarios de prueba de arriba.
 | `mockUsuarios.ts` | ABM de choferes/usuarios (listar, crear, desactivar).         |
 | `mockClientes.ts` | CRUD de clientes (3 clientes de ejemplo).                     |
 | `mockEntregas.ts` | CRUD de entregas + cancelar/completar (3 entregas de ejemplo). |
-| `mockRutas.ts`    | Crear ruta (con orden de paradas) y asignar chofer.           |
+| `mockRutas.ts`    | Rutas: creación, asignación, ejecución del chofer, no entregadas, notas, filtros y seguimiento público. |
 | `mockHelpers.ts`  | Utilidades: latencia simulada, respuestas, parseo de body.    |
 
 > Los datos viven **en memoria**: si recargás la página, vuelven al estado semilla.
@@ -160,8 +160,8 @@ src/
 
 ## Sprint 3 — MVP operativo
 
-Las vistas del Sprint 3 quedan disponibles en modo mock y usan los mismos endpoints que deberá
-implementar el backend real. Para una demostración completa: creá una ruta, asignala a un chofer,
+Las vistas del Sprint 3 quedan disponibles en modo mock y usan los mismos endpoints que
+implementa el backend real. Para una demostración completa: creá una ruta, asignala a un chofer,
 iniciá sesión como chofer y confirmá cada entrega con el código mostrado en el modal.
 
 | Prioridad | Historia / tarea | Estimación |
@@ -196,5 +196,11 @@ chofer activa esas funciones; si no están disponibles, la operación continúa 
 - **Tema claro / oscuro**: toggle (sol / luna) en el sidebar. Recuerda la preferencia en
   `localStorage` y respeta la del sistema operativo la primera vez.
 
-> Las acciones de chofer sobre la ruta (iniciar / finalizar) corresponden al dashboard del
-> chofer y se abordan en el siguiente sprint (MVP 3).
+## Funcionalidades (MVP 4)
+
+- **Chofer**: marcar entrega como **no entregada** (con motivo), notas por parada, botón
+  **Navegar** y teléfono del cliente con enlace a llamada y WhatsApp.
+- **Historial de rutas** (`/admin/rutas`): filtros por estado y rango de fechas, y resumen
+  "X de Y entregadas · Z no entregada(s)".
+- **Ruta finalizada**: aviso de cuántas entregas quedaron sin realizar.
+- **Seguimiento público**: progreso "Parada N de M" contando sólo entregas (sin paradas extra).

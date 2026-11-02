@@ -213,6 +213,11 @@ export function RutaDetallePage() {
                 {ruta.total_km != null ? ` · ${ruta.total_km.toFixed(1)} km` : ''}
                 {ruta.tiempo_estimado_min != null ? ` · ${formatearTiempo(ruta.tiempo_estimado_min)}` : ''}
               </p>
+              {ruta.estado === 'finalizada' && (
+                <p className="mt-1 text-xs font-medium text-error">
+                  Terminó con {ruta.paradas.filter((p) => p.omitida && !p.es_parada_extra).length} entrega(s) sin realizar.
+                </p>
+              )}
               {ruta.fecha_programada && (
                 <p className="mt-1 text-xs text-gray-mid">
                   Programada para {new Date(`${ruta.fecha_programada}T12:00:00`).toLocaleDateString('es-AR')}
@@ -323,7 +328,14 @@ export function RutaDetallePage() {
                     {parada.omitida && <Badge tone="error">No entregada{parada.motivo_omision ? `: ${MOTIVO_LABEL[parada.motivo_omision]}` : ''}</Badge>}
                   </div>
                   <p className="truncate text-xs text-gray-mid">{getParadaDireccion(parada)}</p>
-                  {parada.cliente_telefono && <p className="text-xs text-gray-mid">Tel: {parada.cliente_telefono}</p>}
+                  {parada.cliente_telefono && (
+                    <p className="text-xs text-gray-mid">
+                      Tel:{' '}
+                      <a href={`tel:${parada.cliente_telefono}`} className="text-brand hover:underline">{parada.cliente_telefono}</a>
+                      {' · '}
+                      <a href={`https://wa.me/${parada.cliente_telefono.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">WhatsApp</a>
+                    </p>
+                  )}
                   {parada.nota_chofer && <p className="mt-2 rounded-card bg-surface px-3 py-2 text-xs text-white"><span className="text-gray-mid">Nota del chofer: </span>{parada.nota_chofer}</p>}
                   {(parada.distancia_desde_anterior_km != null ||
                     parada.tiempo_desde_anterior_min != null) && (

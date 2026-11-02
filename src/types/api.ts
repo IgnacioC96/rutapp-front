@@ -286,6 +286,10 @@ export interface Ruta {
   creada_en: string
   iniciada_en?: string | null
   finalizada_en?: string | null
+  /** Resumen del backend (solo paradas de entrega; las extras no cuentan). */
+  paradas_total?: number
+  paradas_completadas?: number
+  paradas_omitidas?: number
   paradas: Parada[]
 }
 
@@ -332,6 +336,10 @@ export interface RutasQuery {
   chofer_id?: string
   solo_plantillas?: boolean
   fecha_programada?: string
+  estado?: EstadoRuta
+  /** Rango sobre la fecha programada, inclusivo (YYYY-MM-DD). */
+  fecha_desde?: string
+  fecha_hasta?: string
 }
 
 /* ---------- Sprint 3: operación, tracking y flota ---------- */

@@ -39,18 +39,20 @@ export function getSeguimientoMock(codigo: string): SeguimientoRuta | undefined 
   const ruta = rutas.find((r) => `RUT-${r.id}` === codigo)
   if (!ruta) return undefined
   const chofer = mockUsers.find((u) => u.id === ruta.chofer_id)
-  const completadas = ruta.paradas.filter((p) => p.completada || p.omitida).length
-  const proxima = ruta.paradas.find((p) => !p.completada && !p.omitida)
+  // Igual que el back: las paradas extra no cuentan ni en el progreso ni en "Parada N de M".
+  const entregas = ruta.paradas.filter((p) => !p.es_parada_extra)
+  const completadas = entregas.filter((p) => p.completada || p.omitida).length
+  const proxima = entregas.find((p) => !p.completada && !p.omitida)
   const ubicacion = ubicaciones.get(ruta.id)
   return {
     codigo,
     ruta_nombre: ruta.nombre,
     estado: ruta.estado,
     chofer_nombre: chofer?.nombre ?? 'Chofer asignado',
-    progreso: ruta.paradas.length ? Math.round((completadas / ruta.paradas.length) * 100) : 0,
+    progreso: entregas.length ? Math.round((completadas / entregas.length) * 100) : 0,
     // Igual que el back: sin datos del cliente, solo "Parada N de M".
     proxima_parada: proxima
-      ? { cliente: `Parada ${proxima.orden} de ${ruta.paradas.length}`, direccion: '', orden: proxima.orden, completada: false }
+      ? { cliente: `Parada ${entregas.indexOf(proxima) + 1} de ${entregas.length}`, direccion: '', orden: proxima.orden, completada: false }
       : undefined,
     chofer_latitud: ubicacion?.latitud ?? ruta.origen_latitud,
     chofer_longitud: ubicacion?.longitud ?? ruta.origen_longitud,
@@ -228,7 +230,13 @@ export async function handleRutas(
       const choferId = config.params?.chofer_id as string | undefined
       const soloPlantillas = config.params?.solo_plantillas === true || config.params?.solo_plantillas === 'true'
       const fechaProgramada = config.params?.fecha_programada as string | undefined
+      const estado = config.params?.estado as string | undefined
+      const fechaDesde = config.params?.fecha_desde as string | undefined
+      const fechaHasta = config.params?.fecha_hasta as string | undefined
       let filtradas = rutas.slice()
+      if (estado) filtradas = filtradas.filter((r) => r.estado === estado)
+      if (fechaDesde) filtradas = filtradas.filter((r) => (r.fecha_programada ?? '') >= fechaDesde)
+      if (fechaHasta) filtradas = filtradas.filter((r) => (r.fecha_programada ?? '9999') <= fechaHasta)
       if (choferId) filtradas = filtradas.filter((r) => r.chofer_id === choferId)
       if (soloPlantillas) filtradas = filtradas.filter((r) => r.es_plantilla)
       if (fechaProgramada) filtradas = filtradas.filter((r) => r.fecha_programada === fechaProgramada)
@@ -236,7 +244,15 @@ export async function handleRutas(
         total: filtradas.length,
         pagina,
         por_pagina: porPagina,
-        rutas: filtradas.reverse(),
+        rutas: filtradas.reverse().map((r) => {
+          const entregas = r.paradas.filter((p) => !p.es_parada_extra)
+          return {
+            ...r,
+            paradas_total: entregas.length,
+            paradas_completadas: entregas.filter((p) => p.completada).length,
+            paradas_omitidas: entregas.filter((p) => p.omitida).length,
+          }
+        }),
       }
       return makeResponse(config, 200, payload)
     }
