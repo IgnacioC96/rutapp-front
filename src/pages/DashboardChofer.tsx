@@ -169,19 +169,23 @@ export function DashboardChofer() {
   const activa = data?.rutas.find((r) => r.estado === 'en_curso')
   const iniciar = useIniciarRuta(data?.rutas.find((r) => r.estado === 'asignada')?.id ?? '')
   const finalizar = useFinalizarRuta(activa?.id ?? '')
-  const ubicar = useActualizarUbicacion(activa?.id ?? '')
+  const { mutate: reportarUbicacion } = useActualizarUbicacion(activa?.id ?? '')
+  const activaId = activa?.id
 
+  // La ubicación se informa una vez y luego cada 15 segundos mientras haya una ruta activa.
+  // Depende solo del id de la ruta y de `mutate` (estable): con el objeto `activa` o el resultado de la
+  // mutación completos, cada respuesta disparaba un re-render y el efecto volvía a enviar de inmediato.
   useEffect(() => {
-    if (!activa || !navigator.geolocation) return
+    if (!activaId || !navigator.geolocation) return
     const enviar = () => navigator.geolocation.getCurrentPosition(
-      ({ coords }) => ubicar.mutate({ latitud: coords.latitude, longitud: coords.longitude }),
+      ({ coords }) => reportarUbicacion({ latitud: coords.latitude, longitud: coords.longitude }),
       () => undefined,
       { enableHighAccuracy: true, timeout: 8_000 },
     )
     enviar()
     const id = window.setInterval(enviar, 15_000)
     return () => window.clearInterval(id)
-  }, [activa, ubicar]) // La ubicación se informa cada 15 segundos mientras una ruta está activa.
+  }, [activaId, reportarUbicacion])
 
   function pedirFinalizacion(ruta: Ruta) {
     const pendientes = ruta.paradas.filter((parada) => esParadaEntrega(parada) && !parada.completada && !parada.omitida).length
