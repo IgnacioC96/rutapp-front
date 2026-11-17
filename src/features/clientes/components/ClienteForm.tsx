@@ -70,7 +70,7 @@ function PinDireccion({ direccion, onChange }: { direccion: Direccion; onChange:
   }, [direccion.descripcion])
 
   return <div className="overflow-hidden rounded-card border border-stroke">
-    <MapContainer center={posicion} zoom={13} scrollWheelZoom={false} className="h-48 w-full" aria-label="Mapa para ubicar la dirección" whenReady={() => undefined}>
+    <MapContainer center={posicion} zoom={13} scrollWheelZoom className="h-48 w-full" aria-label="Mapa para ubicar la dirección" whenReady={() => undefined}>
       <CentrarMapa posicion={posicion} /><SeleccionarPunto onChange={onChange} />
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <Marker position={posicion} draggable icon={PIN_ICON} eventHandlers={{ dragend: (event) => { const punto = event.target.getLatLng(); onChange(punto.lat, punto.lng) } }} />

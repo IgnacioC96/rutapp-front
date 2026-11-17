@@ -93,7 +93,7 @@ export function MapaRuta({
       <MapContainer
         center={puntoOrigen}
         zoom={12}
-        scrollWheelZoom={false}
+        scrollWheelZoom
         className="h-64 w-full"
         aria-label="Mapa de la ruta"
       >
