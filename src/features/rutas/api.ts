@@ -86,8 +86,14 @@ async function guardarNotaParada(id: string, paradaId: string, payload: NotaPara
   return data
 }
 
-async function actualizarUbicacion(id: string, ubicacion: Pick<UbicacionChofer, 'latitud' | 'longitud'>): Promise<Ruta> {
-  const { data } = await apiClient.patch<Ruta>(`/rutas/${id}/ubicacion`, ubicacion)
+interface UbicacionResponse {
+  ok: boolean
+  fase?: string | null
+  ruta_finalizada?: boolean
+}
+
+async function actualizarUbicacion(id: string, ubicacion: Pick<UbicacionChofer, 'latitud' | 'longitud'>): Promise<UbicacionResponse> {
+  const { data } = await apiClient.patch<UbicacionResponse>(`/rutas/${id}/ubicacion`, ubicacion)
   return data
 }
 
@@ -196,7 +202,11 @@ export function useGuardarNotaParada(id: string) {
 
 export function useActualizarUbicacion(id: string) {
   const qc = useQueryClient()
-  return useMutation({ mutationFn: (ubicacion: Pick<UbicacionChofer, 'latitud' | 'longitud'>) => actualizarUbicacion(id, ubicacion), onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }) })
+  return useMutation({
+    mutationFn: (ubicacion: Pick<UbicacionChofer, 'latitud' | 'longitud'>) => actualizarUbicacion(id, ubicacion),
+    // Reportar la posición no cambia nada que el chofer vea, salvo cuando el back cierra la ruta al llegar al retorno.
+    onSuccess: (respuesta) => { if (respuesta.ruta_finalizada) qc.invalidateQueries({ queryKey: KEYS.all }) },
+  })
 }
 
 export function useSeguimiento(codigo: string | undefined) {
