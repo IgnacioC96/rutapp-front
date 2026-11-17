@@ -182,7 +182,7 @@ useEffect(() => {
               <MapContainer
                 center={[origenCoords.latitud, origenCoords.longitud]}
                 zoom={15}
-                scrollWheelZoom={false}
+                scrollWheelZoom
                 className="h-48 w-full"
               >
                 <TileLayer

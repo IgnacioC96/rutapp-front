@@ -123,7 +123,7 @@ export function SeguimientoPublicoPage() {
                     <MapContainer
                       center={[data.chofer_latitud, data.chofer_longitud]}
                       zoom={15}
-                      scrollWheelZoom={false}
+                      scrollWheelZoom
                       className="h-48 w-full"
                       aria-label="Ubicación del chofer en tiempo real"
                     >
