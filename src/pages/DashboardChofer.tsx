@@ -107,13 +107,13 @@ function QrConfirmation({ ruta, parada, onClose }: { ruta: Ruta; parada: Parada;
     }
     confirmar.mutate({ entregaId: parada.entrega_id, codigo: codigo.trim() }, { onSuccess: onClose, onError: (err) => setError(getApiErrorMessage(err, 'No se pudo validar el código')) })
   }
-  return <Modal open onClose={onClose} title="Confirmar entrega con QR">
-    <p className="mb-4 text-sm text-gray-mid">Escaneá el QR de la entrega o ingresá el código de 8 caracteres si la cámara no está disponible.</p>
+  return <Modal open onClose={onClose} title="Confirmar entrega">
+    <p className="mb-4 text-sm text-gray-mid">Ingresá el código de 8 caracteres que te da el cliente. Si lo tiene en un QR, también podés escanearlo con la cámara.</p>
     <Input autoFocus name="codigoQr" label="Código de confirmación" placeholder="Ej: 405CB16E" value={codigo} onChange={(e) => setCodigo(e.target.value)} />
     {!camaraActiva && <button type="button" onClick={() => void abrirCamara()} className="mt-3 text-sm font-semibold text-brand hover:underline">Abrir lector con cámara</button>}
     {camaraActiva && <video ref={video} muted playsInline className="mt-3 aspect-video w-full rounded-card bg-black object-cover" />}
     {error && <p className="mt-3 text-sm text-error">{error}</p>}
-    <div className="mt-5 flex justify-end gap-2"><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button onClick={confirmarQr} loading={confirmar.isPending} disabled={!codigo.trim()}>Validar QR</Button></div>
+    <div className="mt-5 flex justify-end gap-2"><Button variant="secondary" onClick={onClose}>Cancelar</Button><Button onClick={confirmarQr} loading={confirmar.isPending} disabled={!codigo.trim()}>Confirmar entrega</Button></div>
   </Modal>
 }
 
@@ -230,7 +230,7 @@ export function DashboardChofer() {
               {!resuelta && urlNavegar(parada) && <a href={urlNavegar(parada)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-card border border-stroke px-3 py-2 text-sm font-semibold text-white hover:bg-surface">Navegar</a>}
               <Button variant="secondary" className="px-3 py-2" onClick={() => setNotaParada({ ruta, parada })}>{parada.nota_chofer ? 'Editar nota' : 'Nota'}</Button>
               {esParadaEntrega(parada) && !resuelta && <Button variant="secondary" className="px-3 py-2" onClick={() => setNoEntregadaParada({ ruta, parada })}>No entregada</Button>}
-              {esParadaEntrega(parada) && !resuelta && <Button className="px-3 py-2" onClick={() => setQrParada({ ruta, parada })}>Confirmar QR</Button>}
+              {esParadaEntrega(parada) && !resuelta && <Button className="px-3 py-2" onClick={() => setQrParada({ ruta, parada })}>Confirmar entrega</Button>}
             </div>}
           </Card>
         })}
