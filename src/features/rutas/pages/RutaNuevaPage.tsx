@@ -10,7 +10,6 @@ import { getApiErrorMessage } from '@/lib/apiClient'
 import { cn } from '@/lib/cn'
 import { useEntregas } from '@/features/entregas/api'
 import { useCreateRuta } from '../api'
-import { MapaRuta } from '../components/MapaRuta'
 import type { Ruta } from '@/types/api'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import type { LatLngExpression } from 'leaflet'
@@ -87,7 +86,6 @@ useEffect(() => {
   const [formError, setFormError] = useState<string | null>(null)
 
   const entregas = data?.entregas ?? []
-  const entregasSeleccionadas = entregas.filter((entrega) => seleccion.has(entrega.id))
 
   function toggle(id: string) {
     setSeleccion((prev) => {
@@ -272,21 +270,6 @@ useEffect(() => {
 
           {errores.entregas && <p className="mt-2 text-sm text-error">{errores.entregas}</p>}
         </div>
-
-        {entregasSeleccionadas.length > 0 && (
-          <section>
-            <h2 className="mb-1 text-sm font-semibold text-white">Vista previa del recorrido</h2>
-            <p className="mb-2 text-xs text-gray-mid">Las ubicaciones se ajustan al optimizar la ruta.</p>
-            <MapaRuta
-              origen={{ descripcion: origen, latitud: origenCoords?.latitud, longitud: origenCoords?.longitud }}
-              paradas={entregasSeleccionadas.map((entrega, index) => ({
-                orden: index + 1,
-                cliente: entrega.cliente_nombre ?? 'Cliente',
-                direccion: entrega.direccion_descripcion ?? 'Dirección',
-              }))}
-            />
-          </section>
-        )}
 
         {formError && <p className="text-sm text-error">{formError}</p>}
 
