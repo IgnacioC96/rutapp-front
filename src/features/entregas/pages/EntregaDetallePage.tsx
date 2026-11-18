@@ -126,7 +126,7 @@ export function EntregaDetallePage() {
                 </h2>
                 <p className="font-mono text-lg font-bold tracking-widest text-white">{entrega.codigo_confirmacion}</p>
                 <p className="mt-1 text-xs text-gray-dark">
-                  Contenido del QR: QR-{entrega.codigo_confirmacion}. Es el código que el destinatario le muestra al chofer.
+                  Es el código que el destinatario le da al chofer para confirmar la entrega.
                 </p>
               </Card>
             )}
