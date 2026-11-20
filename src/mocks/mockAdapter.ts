@@ -13,6 +13,7 @@ import { handleClientes, matchesClientes } from './mockClientes'
 import { handleEntregas, matchesEntregas } from './mockEntregas'
 import { handleUsuarios, matchesUsuarios } from './mockUsuarios'
 import { getSeguimientoMock, handleRutas, matchesRutas } from './mockRutas'
+import { handleMetricas, matchesMetricas } from './mockMetricas'
 
 /**
  * ============================================================
@@ -165,6 +166,10 @@ export const mockAdapter: AxiosAdapter = async (config) => {
 
   if (matchesRutas(url)) {
     return handleRutas(config, url, method)
+  }
+
+  if (matchesMetricas(url)) {
+    return handleMetricas(config, url, method)
   }
 
   // Cualquier otro endpoint aún no mockeado.

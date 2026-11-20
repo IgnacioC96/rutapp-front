@@ -19,10 +19,13 @@ import { RutaDetallePage } from '@/features/rutas/pages/RutaDetallePage'
 import { GestionFlotaPage } from '@/pages/GestionFlotaPage'
 import { PlantillasRutaPage } from '@/pages/PlantillasRutaPage'
 import { SeguimientoPublicoPage } from '@/pages/SeguimientoPublicoPage'
+import { MetricasPage } from '@/features/metricas/pages/MetricasPage'
+import { AnalyticsTracker } from '@/features/metricas/AnalyticsTracker'
 
 export default function App() {
   return (
     <BrowserRouter>
+      <AnalyticsTracker />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/setup" element={<SetupPage />} />
@@ -44,6 +47,7 @@ export default function App() {
           <Route path="/admin/rutas/:id" element={<RutaDetallePage />} />
           <Route path="/admin/flota" element={<GestionFlotaPage />} />
           <Route path="/admin/plantillas" element={<PlantillasRutaPage />} />
+          <Route path="/admin/metricas" element={<MetricasPage />} />
         </Route>
 
         <Route path="/seguimiento/:codigo" element={<SeguimientoPublicoPage />} />

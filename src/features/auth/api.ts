@@ -27,9 +27,9 @@ export async function fetchCurrentUser(): Promise<CurrentUser> {
   return data
 }
 
-/** POST /auth/logout — invalida el token en el backend. */
+/** POST /metricas/sesion/cerrar — marca el fin de la sesión para medir su duración. */
 async function logout(): Promise<void> {
-  await apiClient.post('/auth/logout')
+  await apiClient.post('/metricas/sesion/cerrar')
 }
 
 /** Hook de login: en éxito guarda la sesión en el store. */
