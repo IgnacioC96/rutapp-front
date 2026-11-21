@@ -401,3 +401,50 @@ export interface VehiculosQuery {
   estado?: Vehiculo['estado']
   chofer_id?: string
 }
+
+// ── Métricas de uso (dashboard de analítica) ───────────────────────────────
+
+export interface MetricasKpis {
+  visitas: number
+  sesiones: number
+  usuarios_activos: number
+  logins: number
+  logins_fallidos: number
+  duracion_promedio_min: number
+  duracion_mediana_min: number
+  operaciones: number
+  operaciones_por_sesion: number
+  registros_creados: number
+  registros_modificados: number
+  registros_eliminados: number
+  busquedas: number
+  entregas_creadas: number
+  entregas_confirmadas: number
+  entregas_no_realizadas: number
+  conversion_entregas_pct: number
+  tasa_no_entrega_pct: number
+  rutas_creadas: number
+  rutas_cerradas: number
+  abandono_formularios_pct: number
+}
+
+export interface MetricasDashboard {
+  desde: string
+  hasta: string
+  zona_horaria: string
+  kpis: MetricasKpis
+  top_urls: { url: string; visitas: number }[]
+  uso_por_seccion: { seccion: string; visitas: number }[]
+  /** 7 filas (lunes a domingo) x 24 columnas (hora 0 a 23). */
+  mapa_calor: number[][]
+  sesiones_por_rol: { rol: string; sesiones: number; usuarios: number; duracion_prom_min: number }[]
+  dispositivos: { nombre: string; n: number }[]
+  navegadores: { nombre: string; n: number }[]
+  serie_diaria: { fecha: string; sesiones: number; visitas: number; operaciones: number }[]
+  eventos: { evento: string; tipo: string; n: number }[]
+  flujo_navegacion: { desde: string; hacia: string; n: number }[]
+  operaciones_lentas: { evento: string; n: number; promedio_ms: number; p95_ms: number }[]
+  abandono_formularios: { flujo: string; inicios: number; completados: number; abandono_pct: number }[]
+  embudo_rutas: { etapa: string; cantidad: number }[]
+  embudo_entregas: { etapa: string; cantidad: number }[]
+}

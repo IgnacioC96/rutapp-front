@@ -204,3 +204,12 @@ chofer activa esas funciones; si no están disponibles, la operación continúa 
   "X de Y entregadas · Z no entregada(s)".
 - **Ruta finalizada**: aviso de cuántas entregas quedaron sin realizar.
 - **Seguimiento público**: progreso "Parada N de M" contando sólo entregas (sin paradas extra).
+
+## Métricas de uso (MVP 4)
+
+- **Dashboard de métricas** (`/admin/metricas`, solo admin, menú "Métricas"): usuarios activos, visitas, tiempo de sesión,
+  acciones, conversión de entregas, abandono de formularios, dispositivos y navegadores, páginas más visitadas,
+  mapa de calor por horario, embudos y operaciones más lentas. Gráficos propios en SVG (sin librerías nuevas).
+- **Captura:** `AnalyticsTracker` avisa cada cambio de pantalla al backend (`POST /metricas/navegacion`) y el botón **Salir**
+  cierra la sesión de métricas (`POST /metricas/sesion/cerrar`). En modo mock no se envía nada y el dashboard muestra datos de ejemplo.
+

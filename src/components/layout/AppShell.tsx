@@ -32,6 +32,7 @@ const icons = {
   rutas: (
     <path d="M9 20.42 2.79 14.2a1 1 0 0 1 0-1.41l9-9a1 1 0 0 1 1.41 0l6.21 6.21a1 1 0 0 1 0 1.41l-9 9a1 1 0 0 1-1.41 0ZM7.5 8A1.5 1.5 0 1 0 9 9.5 1.5 1.5 0 0 0 7.5 8Z" />
   ),
+  metricas: <path d="M5 9.2h3V19H5V9.2ZM10.6 5h2.8v14h-2.8V5Zm5.6 8H19v6h-2.8v-6Z" />,
   flota: <path d="M5 16a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm14 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM3 5h12v11H3V5Zm14 4h2l3 4v3h-5V9Z" />,
 } as const
 
@@ -43,6 +44,7 @@ const NAV: NavItem[] = [
   { label: 'Rutas', path: '/admin/rutas', roles: ['admin'], icon: icons.rutas },
   { label: 'Flota', path: '/admin/flota', roles: ['admin'], icon: icons.flota },
   { label: 'Plantillas', path: '/admin/plantillas', roles: ['admin'], icon: icons.rutas },
+  { label: 'Métricas', path: '/admin/metricas', roles: ['admin'], icon: icons.metricas },
   { label: 'Mis rutas', path: '/chofer', roles: ['chofer'], icon: icons.rutas },
 ]
 
