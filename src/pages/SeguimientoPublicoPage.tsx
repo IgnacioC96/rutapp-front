@@ -84,9 +84,16 @@ export function SeguimientoPublicoPage() {
               </div>
               <div className="mt-5">
                 <div className="mb-1 flex justify-between text-xs text-gray-mid">
-                  <span>Progreso de entregas</span>
+                  <span>Paradas resueltas</span>
                   <span>{data.progreso}%</span>
                 </div>
+                {data.paradas_total ? (
+                  <p className="mb-2 text-xs text-gray-mid">
+                    {data.paradas_entregadas ?? 0} entregada{data.paradas_entregadas === 1 ? '' : 's'}
+                    {(data.paradas_no_entregadas ?? 0) > 0 && ` · ${data.paradas_no_entregadas} no entregada${data.paradas_no_entregadas === 1 ? '' : 's'}`}
+                    {' '}de {data.paradas_total}
+                  </p>
+                ) : null}
                 <div className="h-2 overflow-hidden rounded-full bg-surface">
                   <div
                     className="h-full bg-brand transition-all"
@@ -106,7 +113,9 @@ export function SeguimientoPublicoPage() {
                   <p className="text-sm text-white">{data.proxima_parada.cliente}</p>
                 </>
               ) : (
-                <p className="mt-4 text-sm text-success">La ruta completó todas sus paradas.</p>
+                (data.paradas_no_entregadas ?? 0) > 0
+                  ? <p className="mt-4 text-sm text-warning">Ruta finalizada: {data.paradas_entregadas} entregada{data.paradas_entregadas === 1 ? '' : 's'} y {data.paradas_no_entregadas} no entregada{data.paradas_no_entregadas === 1 ? '' : 's'}.</p>
+                  : <p className="mt-4 text-sm text-success">La ruta completó todas sus entregas.</p>
               )}
             </Card>
 
