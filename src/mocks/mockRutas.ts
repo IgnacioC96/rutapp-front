@@ -50,6 +50,9 @@ export function getSeguimientoMock(codigo: string): SeguimientoRuta | undefined 
     estado: ruta.estado,
     chofer_nombre: chofer?.nombre ?? 'Chofer asignado',
     progreso: entregas.length ? Math.round((completadas / entregas.length) * 100) : 0,
+    paradas_total: entregas.length,
+    paradas_entregadas: entregas.filter((p) => p.completada).length,
+    paradas_no_entregadas: entregas.filter((p) => p.omitida && !p.completada).length,
     // Igual que el back: sin datos del cliente, solo "Parada N de M".
     proxima_parada: proxima
       ? { cliente: `Parada ${entregas.indexOf(proxima) + 1} de ${entregas.length}`, direccion: '', orden: proxima.orden, completada: false }

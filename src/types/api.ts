@@ -364,6 +364,10 @@ export interface SeguimientoRuta {
   estado: EstadoRuta
   chofer_nombre: string
   progreso: number
+  // Paradas de entrega: el progreso cuenta resueltas (entregadas + no entregadas)
+  paradas_total?: number
+  paradas_entregadas?: number
+  paradas_no_entregadas?: number
   proxima_parada?: SeguimientoParada
   ultima_actualizacion?: string
   // Coordenadas del chofer actualizadas cada 15 segundos
